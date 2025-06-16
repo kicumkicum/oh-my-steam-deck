@@ -2,6 +2,19 @@
 
 A set of scripts, settings and game fixes.
 
+## First steps
+
+### Save your games
+
+- Install any game
+- `mkdir ~/games`
+- `mv ~/.local/share/Steam/steamapps/common/ ~/games/steam`
+- `ln -s ~/games/steam ~/.local/share/Steam/steamapps/common/`
+
+### Save your saves
+
+TODO
+
 ## Games workarounds
 
 ### Baldurs Gate's 3 Enable Split Screen
