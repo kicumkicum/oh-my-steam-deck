@@ -6,10 +6,12 @@ A set of scripts, settings and game fixes.
 
 ### Save your games
 
-- Install any game
+- Install any game and run it
 - `mkdir ~/games`
 - `mv ~/.local/share/Steam/steamapps/common/ ~/games/steam`
 - `ln -s ~/games/steam ~/.local/share/Steam/steamapps/common/`
+- `mv ~/.local/share/Steam/steamapps/compatdata/ ~/games/steam-saves`
+- `ln -s ~/games/steam-saves ~/.local/share/Steam/steamapps/compatdata/`
 
 ### Save your saves
 
