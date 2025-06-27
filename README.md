@@ -4,18 +4,16 @@ A set of scripts, settings and game fixes.
 
 ## First steps
 
-### Save your games
+### Save your games and saves
 
-- Install any game and run it
+When steam reset system, it remove `~/.local` directory wyth your games, saves and settings. You can safe games and saves
+
+- If you dont have any installed games - install any game first
 - `mkdir ~/games`
 - `mv ~/.local/share/Steam/steamapps/common/ ~/games/steam`
 - `ln -s ~/games/steam ~/.local/share/Steam/steamapps/common/`
 - `mv ~/.local/share/Steam/steamapps/compatdata/ ~/games/steam-saves`
 - `ln -s ~/games/steam-saves ~/.local/share/Steam/steamapps/compatdata/`
-
-### Save your saves
-
-TODO
 
 ## Games workarounds
 
