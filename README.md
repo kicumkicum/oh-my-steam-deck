@@ -85,3 +85,11 @@ else
     echo -e "${RED}Error: Neither the original nor patched value was found in the executable.${RESET}"
 fi
 ```
+
+## Mount NFS share and use it like library
+
+TODO
+
+## Add external GPU
+
+TODO
