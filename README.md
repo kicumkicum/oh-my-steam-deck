@@ -90,4 +90,14 @@ TODO
 
 ## Add external GPU
 
+### Hardware
+
+- M2-oculink adapter instead of ssd
+- Oculink to pci-e adapter
+
+### Install system on MicroSD
+
+Script https://github.com/kicumkicum/SteamOS-microSD
+- [ ] Blocked call sanitize in original valve script
+
 TODO
