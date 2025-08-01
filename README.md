@@ -4,6 +4,11 @@ A set of scripts, settings and game fixes.
 
 ## First steps
 
+### Enable ssh
+
+- Set password `passwd`
+- Enable ssh `sudo systemctl enable sshd --now`
+
 ### Save your games and saves
 
 When steam reset system, it remove `~/.local` directory wyth your games, saves and settings. You can safe games and saves
