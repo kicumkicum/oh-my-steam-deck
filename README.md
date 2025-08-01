@@ -16,9 +16,9 @@ When steam reset system, it remove `~/.local` directory wyth your games, saves a
 - If you dont have any installed games - install any game first
 - `mkdir ~/games`
 - `mv ~/.local/share/Steam/steamapps/common/ ~/games/steam`
-- `ln -s ~/games/steam ~/.local/share/Steam/steamapps/common/`
+- `ln -s ~/games/steam ~/.local/share/Steam/steamapps/common`
 - `mv ~/.local/share/Steam/steamapps/compatdata/ ~/games/steam-saves`
-- `ln -s ~/games/steam-saves ~/.local/share/Steam/steamapps/compatdata/`
+- `ln -s ~/games/steam-saves ~/.local/share/Steam/steamapps/compatdata`
 
 ## Games workarounds
 
