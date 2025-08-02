@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-# add_steam_lib_minimal.sh
 
 export DISPLAY=:0
 export XAUTHORITY=/run/user/1000/xauth_kNEwhJ
