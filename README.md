@@ -20,6 +20,17 @@ When steam reset system, it remove `~/.local` directory wyth your games, saves a
 - `mv ~/.local/share/Steam/steamapps/compatdata/ ~/games/steam-saves`
 - `ln -s ~/games/steam-saves ~/.local/share/Steam/steamapps/compatdata`
 
+## Extend libraries
+
+### Add some directory from other disk like library
+
+Run script from bin dir from repo by ssh `./bin/add-external-library /some/path/library`
+
+### Add some remote directory by NFS
+
+1. Install NFS `TODO`
+2. Run script `TODO`
+
 ## Games workarounds
 
 ### Baldurs Gate's 3 Enable Split Screen
