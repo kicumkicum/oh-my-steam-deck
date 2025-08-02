@@ -31,6 +31,10 @@ Run script from bin dir from repo by ssh `./bin/add-external-library /some/path/
 1. Install NFS `TODO`
 2. Run script `TODO`
 
+### Add other games to library
+
+Script for adding all games in some directory to Steam library `TODO`
+
 ## Games workarounds
 
 ### Baldurs Gate's 3 Enable Split Screen
