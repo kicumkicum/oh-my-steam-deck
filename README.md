@@ -120,4 +120,9 @@ TODO
 Script https://github.com/kicumkicum/SteamOS-microSD
 - [ ] Blocked call sanitize in original valve script
 
+### Debug
+
+lspci |grep VGA
+journalctl --user -u gamescope-session.service -b
+
 TODO

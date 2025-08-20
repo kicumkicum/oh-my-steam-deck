@@ -1,0 +1,13 @@
+[Unit]
+Description=External GPU Headless Rendering Setup
+Before=gamescope-session.service
+After=systemd-modules-load.service multi-user.target
+
+[Service]
+Type=oneshot
+ExecStart=/home/deck/bin/external-gpu-headless-rendering.boot.sh
+User=root
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

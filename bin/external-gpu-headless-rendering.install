@@ -1,21 +1,12 @@
 #!/bin/bash
 
-# Create systemd unit
-mkdir -p ~/.config/systemd/user/gamescope-session.service.d/
-cp ./external-gpu-headless-rendering.conf ~/.config/systemd/user/gamescope-session.service.d/10-external-gpu-headless-rendering.conf
-
-systemctl --user daemon-reexec
-systemctl --user daemon-reload
-systemctl --user restart gamescope-session.service
+# Add systemd unit
+sudo cp ./external-gpu-headless-rendering.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable external-gpu-headless-rendering.service
 
 # Copy boot script to bin directory
 mkdir -p /home/deck/bin/
 cp ./external-gpu-headless-rendering.boot.sh /home/deck/bin/
-
-# Create rules for auto run script
-sudo cat <<EOL > /etc/sudoers.d/external-gpu-headless-rendering
-Defaults:deck !requiretty
-deck ALL=(root) NOPASSWD: /home/deck/bin/external-gpu-headless-rendering.boot.sh
-EOL
 
 echo COMPLETE
