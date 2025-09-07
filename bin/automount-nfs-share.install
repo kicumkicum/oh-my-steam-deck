@@ -1,0 +1,26 @@
+#!/bin/bash
+set -e
+
+# Unit paths
+UNIT_DIR="/etc/systemd/system"
+SRC_DIR="/home/deck/p/oh-my-steam-deck/bin"
+AUTOMOUNT_UNIT="automount-nfs-share.automount"
+MOUNT_UNIT="automount-nfs-share.mount"
+
+echo "Copying units to $UNIT_DIR..."
+sudo cp "$SRC_DIR/$AUTOMOUNT_UNIT" "$UNIT_DIR/"
+sudo cp "$SRC_DIR/$MOUNT_UNIT" "$UNIT_DIR/"
+
+echo "Reloading systemd daemon..."
+sudo systemctl daemon-reload
+
+echo "Enabling and starting the automount unit..."
+sudo systemctl enable "$AUTOMOUNT_UNIT"
+sudo systemctl start "$AUTOMOUNT_UNIT"
+
+echo "Automount unit status:"
+systemctl status "$AUTOMOUNT_UNIT" --no-pager
+
+echo
+echo "To mount the NFS share manually right now, run:"
+echo "  ls /home/deck/games/bb.lan"

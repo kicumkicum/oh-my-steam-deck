@@ -1,0 +1,9 @@
+[Unit]
+Description=Automount Steam NFS Share
+
+[Automount]
+Where=/home/deck/games/bb.lan/
+
+[Install]
+WantedBy=multi-user.target
+

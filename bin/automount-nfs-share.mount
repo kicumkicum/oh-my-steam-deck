@@ -1,0 +1,11 @@
+[Unit]
+Description=Steam NFS Share
+
+[Mount]
+What=bb.lan:/media/DATA/Games/steam
+Where=/home/deck/games/bb.lan/
+Type=nfs
+Options=rw,soft,intr,timeo=5,retrans=2,x-systemd.automount,_netdev
+
+[Install]
+WantedBy=multi-user.target
