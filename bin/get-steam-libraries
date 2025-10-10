@@ -1,0 +1,3 @@
+#!/bin/bash
+
+grep -Eo '"path"[[:space:]]+"[^"]+"' ~/.local/share/Steam/steamapps/libraryfolders.vdf | sed -E 's/.*"path"[[:space:]]+"([^"]+)"/\1/'
