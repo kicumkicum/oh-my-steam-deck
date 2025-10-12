@@ -1,0 +1,133 @@
+#!/usr/bin/env python3
+import os
+import sys
+from pathlib import Path
+import vdf
+from tabulate import tabulate
+
+def get_steam_userdata_dir():
+    home = Path.home()
+    candidates = [
+        home / ".steam/steam/userdata",             
+        home / ".local/share/Steam/userdata",       
+        home / "Library/Application Support/Steam/userdata",  
+        Path(os.environ.get("PROGRAMFILES(X86)", "")) / "Steam/userdata",  
+    ]
+    for path in candidates:
+        if path.exists():
+            return path
+    raise FileNotFoundError("❌ Не удалось найти папку Steam userdata")
+
+def find_shortcuts_vdf():
+    userdata = get_steam_userdata_dir()
+    for userdir in userdata.iterdir():
+        if userdir.is_dir():
+            config = userdir / "config" / "shortcuts.vdf"
+            if config.exists():
+                return config
+    raise FileNotFoundError("❌ Файл shortcuts.vdf не найден")
+
+def read_shortcuts(path):
+    with open(path, "rb") as f:
+        return vdf.binary_load(f)
+
+def write_shortcuts(path, data):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with open(path, "wb") as f:
+        vdf.binary_dump(data, f)
+
+def scan_games(folder):
+    games = []
+    no_exec_dirs = []
+    for entry in os.scandir(folder):
+        if not entry.is_dir():
+            continue
+        exe_found = False
+        for root, _, files in os.walk(entry.path):
+            for f in files:
+                if f.endswith((".exe", ".sh", ".AppImage")):
+                    exe_found = True
+                    full_path = os.path.join(root, f)
+                    games.append({
+                        "AppName": entry.name,
+                        "Exe": f"\"{full_path}\"",
+                        "StartDir": f"\"{root}\"",
+                        "icon": "",
+                        "ShortcutPath": "",
+                        "LaunchOptions": "",
+                        "IsHidden": 0,
+                        "AllowDesktopConfig": 1,
+                        "OpenVR": 0,
+                        "Devkit": 0,
+                        "DevkitGameID": "",
+                        "LastPlayTime": 0,
+                        "tags": {}
+                    })
+                    break
+            if exe_found:
+                break
+        if not exe_found:
+            no_exec_dirs.append(entry.name)
+    return games, no_exec_dirs
+
+def game_exists(existing, exe_path):
+    for shortcut in existing.values():
+        if shortcut.get("Exe", "").strip('"') == exe_path:
+            return True
+    return False
+
+def main():
+    if len(sys.argv) < 2:
+        print("Использование: python add-to-steam.py /путь/к/папке/с/играми")
+        sys.exit(1)
+
+    folder = Path(sys.argv[1]).expanduser().resolve()
+    if not folder.is_dir():
+        print(f"❌ Ошибка: {folder} — не папка.")
+        sys.exit(1)
+
+    try:
+        shortcuts_path = find_shortcuts_vdf()
+    except FileNotFoundError as e:
+        print(e)
+        sys.exit(1)
+
+    shortcuts = read_shortcuts(shortcuts_path)
+    existing = shortcuts.get("shortcuts", {})
+
+    next_index = max(map(int, existing.keys()), default=-1) + 1
+    results = []
+
+    games, no_exec_dirs = scan_games(folder)
+
+    for game in games:
+        exe_path = game["Exe"].strip('"')
+        if game_exists(existing, exe_path):
+            results.append(["🟡 Уже есть", game["AppName"]])
+        else:
+            existing[str(next_index)] = game
+            next_index += 1
+            results.append(["✅ Добавлена", game["AppName"]])
+
+    for name in no_exec_dirs:
+        results.append(["⚠️ Не найден исполняемый файл", name])
+
+    if any(r[0] == "✅ Добавлена" for r in results):
+        write_shortcuts(shortcuts_path, shortcuts)
+
+    print(tabulate(results, headers=["Статус", "Игра"], tablefmt="grid", stralign="center"))
+    added_count = sum(1 for r in results if r[0] == "✅ Добавлена")
+    if added_count:
+        print(f"\n✅ Добавлено {added_count} новых игр. Перезапусти Steam, чтобы они появились.")
+    else:
+        print("\n🎮 Новых игр не добавлено.")
+
+if __name__ == "__main__":
+    try:
+        from tabulate import tabulate
+    except ImportError:
+        print("Устанавливаю зависимость tabulate...")
+        os.system("pip install tabulate")
+        from tabulate import tabulate
+    main()
+
