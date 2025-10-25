@@ -5,20 +5,20 @@ export XAUTHORITY=/run/user/1000/xauth_kNEwhJ
 
 LIB="$1"
 if [ ! -d "$LIB" ]; then
-  echo "Папка не найдена: $LIB" >&2
+  echo "Directory not found: $LIB" >&2
   exit 1
 fi
 
-# 1) Открываем Console-вкладку
+# 1) Open Console tab
 xdg-open "steam://open/console"
 
-# 2) Ждём, пока Steam откроет окно (подберите время под своё железо)
+# 2) Wait for Steam to open window (adjust time for your hardware)
 sleep 5
 
-# 3) Фокусируем окно Steam (должно называться «Steam» или «Console»)
+# 3) Focus Steam window (should be named "Steam" or "Console")
 xdotool search --onlyvisible --class Steam windowactivate
 
-# 4) Печатаем команду и нажимаем Enter
+# 4) Type command and press Enter
 xdotool type --delay 100 "library_folder_add $LIB"
 xdotool key Return
 

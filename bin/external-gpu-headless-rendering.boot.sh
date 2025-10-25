@@ -13,7 +13,7 @@ switch_shadercache() {
   case "$1" in
     egpu)
       echo "[egpu] Switching shadercache to eGPU..."
-      # Создаем директории, если их нет
+      # Create directories if they don't exist
       [ -d "$EGPU_CACHE" ] || mkdir -p "$EGPU_CACHE"
       [ -L "$CACHE_LINK" ] && rm -f "$CACHE_LINK"
       ln -s "$EGPU_CACHE" "$CACHE_LINK"
@@ -29,13 +29,13 @@ switch_shadercache() {
 
 GPU_COUNT=$(lspci | grep -i 'VGA\|3D' | wc -l)
 if [ "$GPU_COUNT" -lt 2 ]; then
-    echo "Найдено меньше двух видеокарт ($GPU_COUNT). Переключаем shadercache на iGPU и выходим."
+    echo "Found less than two GPUs ($GPU_COUNT). Switching shadercache to iGPU and exiting."
     switch_shadercache igpu
     exit 0
 fi
 
 (
-# Ждем пока файл unbind станет доступен
+# Wait until unbind file becomes available
 while [ ! -w "$UNBIND_PATH" ]; do
     sleep 1
 done
@@ -45,6 +45,6 @@ echo "$EGPU_PCI" > "$UNBIND_PATH"
 sleep 10
 echo "$EGPU_PCI" > "$BIND_PATH"
 
-# После привязки eGPU переключаем shadercache на eGPU
+# After binding eGPU, switch shadercache to eGPU
 switch_shadercache egpu
 ) &

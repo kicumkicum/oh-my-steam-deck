@@ -2,18 +2,20 @@
 
 A set of scripts, settings and game fixes.
 
+[Русская версия](README.ru.md)
+
 ## First steps
 
-### Enable ssh
+### Enable SSH
 
-- Set password `passwd`
-- Enable ssh `sudo systemctl enable sshd --now`
+- Set password: `passwd`
+- Enable SSH: `sudo systemctl enable sshd --now`
 
 ### Save your games and saves
 
-When steam reset system, it remove `~/.local` directory wyth your games, saves and settings. You can safe games and saves
+When Steam resets the system, it removes the `~/.local` directory with your games, saves and settings. You can save games and saves:
 
-- If you dont have any installed games - install any game first
+- If you don't have any installed games - install any game first
 - `mkdir ~/games`
 - `mv ~/.local/share/Steam/steamapps/common/ ~/games/steam`
 - `ln -s ~/games/steam ~/.local/share/Steam/steamapps/common`
@@ -22,11 +24,11 @@ When steam reset system, it remove `~/.local` directory wyth your games, saves a
 
 ## Extend libraries
 
-### Add some directory from other disk like library
+### Add a directory from another disk as a library
 
-Run script from bin dir from repo by ssh `./bin/add-external-library /some/path/library`
+Run script from bin directory from repo via SSH: `./bin/add-external-library /some/path/library`
 
-### Add some remote directory by NFS
+### Add a remote directory via NFS
 
 1. Install NFS `TODO`
 2. Run script `TODO`
@@ -37,7 +39,7 @@ Script for adding all games in some directory to Steam library `TODO`
 
 ## Games workarounds
 
-### Baldurs Gate's 3 Enable Split Screen
+### Baldur's Gate 3 Enable Split Screen
 
 Source - https://www.reddit.com/r/SteamDeck/comments/15iiyxb/baldurs_gate_3_split_screen_solution/
 
@@ -104,7 +106,7 @@ else
 fi
 ```
 
-## Mount NFS share and use it like library
+## Mount NFS share and use it as a library
 
 TODO
 
@@ -112,13 +114,13 @@ TODO
 
 ### Hardware
 
-- M2-oculink adapter instead of ssd
-- Oculink to pci-e adapter
+- M2-oculink adapter instead of SSD
+- Oculink to PCI-e adapter
 
 ### Install system on MicroSD
 
 Script https://github.com/kicumkicum/SteamOS-microSD
-- [ ] Blocked call sanitize in original valve script
+- [ ] Blocked call sanitize in original Valve script
 
 ### Debug
 
