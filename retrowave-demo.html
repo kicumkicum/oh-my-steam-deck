@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Retrowave Theme Demo</title>
+    <link rel="stylesheet" href="retrowave-theme.css">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Orbitron', 'Courier New', monospace;
+        }
+        .demo-section {
+            margin: 40px 0;
+        }
+        .demo-title {
+            font-size: 2rem;
+            margin-bottom: 20px;
+        }
+        .color-palette {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .color-swatch {
+            height: 100px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            text-shadow: 0 0 10px rgba(0,0,0,0.8);
+            border: 2px solid var(--neon-cyan);
+        }
+        .neon-pink { background: var(--neon-pink); }
+        .neon-cyan { background: var(--neon-cyan); color: #000; }
+        .neon-purple { background: var(--neon-purple); }
+        .neon-green { background: var(--neon-green); color: #000; }
+        .neon-orange { background: var(--neon-orange); color: #000; }
+        .dark-bg { background: var(--dark-bg); }
+        .darker-bg { background: var(--darker-bg); }
+        .grid-bg { background: var(--grid-bg); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="fade-in-up">RETROWAVE THEME</h1>
+        <p class="text-center text-neon fade-in-up">Добро пожаловать в мир неоновых цветов и синтвейва 80-х!</p>
+        
+        <div class="demo-section">
+            <h2 class="demo-title slide-in-left">Цветовая палитра</h2>
+            <div class="color-palette">
+                <div class="color-swatch neon-pink">NEON PINK</div>
+                <div class="color-swatch neon-cyan">NEON CYAN</div>
+                <div class="color-swatch neon-purple">NEON PURPLE</div>
+                <div class="color-swatch neon-green">NEON GREEN</div>
+                <div class="color-swatch neon-orange">NEON ORANGE</div>
+                <div class="color-swatch dark-bg">DARK BG</div>
+                <div class="color-swatch darker-bg">DARKER BG</div>
+                <div class="color-swatch grid-bg">GRID BG</div>
+            </div>
+        </div>
+
+        <div class="demo-section">
+            <h2 class="demo-title slide-in-right">Кнопки</h2>
+            <div style="display: flex; gap: 20px; flex-wrap: wrap; margin: 20px 0;">
+                <button class="btn">ОСНОВНАЯ КНОПКА</button>
+                <button class="btn pulse">ПУЛЬСИРУЮЩАЯ</button>
+                <button class="btn neon-glow">С НЕОНОВЫМ СВЕЧЕНИЕМ</button>
+            </div>
+        </div>
+
+        <div class="demo-section">
+            <h2 class="demo-title slide-in-left">Карточки</h2>
+            <div class="card">
+                <h3 class="text-pink">Карточка с заголовком</h3>
+                <p>Это пример карточки в стиле retrowave. Она имеет неоновые границы, градиентный фон и анимации при наведении.</p>
+                <button class="btn" style="margin-top: 15px;">ДЕЙСТВИЕ</button>
+            </div>
+        </div>
+
+        <div class="demo-section">
+            <h2 class="demo-title slide-in-right">Формы</h2>
+            <div class="card">
+                <form>
+                    <div class="form-group">
+                        <label for="username" class="text-neon">Имя пользователя:</label>
+                        <input type="text" id="username" class="form-control" placeholder="Введите ваше имя">
+                    </div>
+                    <div class="form-group">
+                        <label for="email" class="text-pink">Email:</label>
+                        <input type="email" id="email" class="form-control" placeholder="your@email.com">
+                    </div>
+                    <div class="form-group">
+                        <label for="message" class="text-purple">Сообщение:</label>
+                        <textarea id="message" class="form-control" rows="4" placeholder="Ваше сообщение..."></textarea>
+                    </div>
+                    <button type="submit" class="btn">ОТПРАВИТЬ</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="demo-section">
+            <h2 class="demo-title slide-in-left">Списки</h2>
+            <ul class="list-group">
+                <li class="list-group-item">Элемент списка 1</li>
+                <li class="list-group-item">Элемент списка 2</li>
+                <li class="list-group-item">Элемент списка 3</li>
+                <li class="list-group-item">Элемент списка 4</li>
+            </ul>
+        </div>
+
+        <div class="demo-section">
+            <h2 class="demo-title slide-in-right">Прогресс-бары</h2>
+            <div class="progress" style="margin: 10px 0;">
+                <div class="progress-bar" style="width: 25%;"></div>
+            </div>
+            <div class="progress" style="margin: 10px 0;">
+                <div class="progress-bar" style="width: 50%;"></div>
+            </div>
+            <div class="progress" style="margin: 10px 0;">
+                <div class="progress-bar" style="width: 75%;"></div>
+            </div>
+            <div class="progress" style="margin: 10px 0;">
+                <div class="progress-bar" style="width: 100%;"></div>
+            </div>
+        </div>
+
+        <div class="demo-section">
+            <h2 class="demo-title slide-in-left">Текстовые стили</h2>
+            <div class="card">
+                <p class="text-neon">Этот текст имеет неоновый голубой цвет</p>
+                <p class="text-pink">Этот текст имеет неоновый розовый цвет</p>
+                <p class="text-purple">Этот текст имеет неоновый фиолетовый цвет</p>
+                <p>Обычный текст на темном фоне</p>
+            </div>
+        </div>
+
+        <div class="demo-section">
+            <h2 class="demo-title slide-in-right">Анимации</h2>
+            <div style="display: flex; gap: 20px; flex-wrap: wrap; margin: 20px 0;">
+                <div class="card pulse" style="width: 200px; text-align: center;">
+                    <h4>Пульсация</h4>
+                    <p>Элемент пульсирует</p>
+                </div>
+                <div class="card neon-glow" style="width: 200px; text-align: center;">
+                    <h4>Неоновое свечение</h4>
+                    <p>Постоянное свечение</p>
+                </div>
+            </div>
+        </div>
+
+        <footer class="text-center" style="margin-top: 60px; padding: 40px 0; border-top: 2px solid var(--neon-cyan);">
+            <p class="text-neon">Создано в стиле Retrowave/Synthwave</p>
+            <p>Вдохновлено эстетикой 80-х годов</p>
+        </footer>
+    </div>
+
+    <script>
+        // Добавляем интерактивность
+        document.addEventListener('DOMContentLoaded', function() {
+            // Анимация появления элементов при скролле
+            const observerOptions = {
+                threshold: 0.1,
+                rootMargin: '0px 0px -50px 0px'
+            };
+
+            const observer = new IntersectionObserver(function(entries) {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.style.opacity = '1';
+                        entry.target.style.transform = 'translateY(0)';
+                    }
+                });
+            }, observerOptions);
+
+            // Наблюдаем за всеми карточками
+            document.querySelectorAll('.card').forEach(card => {
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(30px)';
+                card.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+                observer.observe(card);
+            });
+
+            // Эффект печатания для заголовка
+            const title = document.querySelector('h1');
+            const titleText = title.textContent;
+            title.textContent = '';
+            let i = 0;
+            const typeWriter = () => {
+                if (i < titleText.length) {
+                    title.textContent += titleText.charAt(i);
+                    i++;
+                    setTimeout(typeWriter, 100);
+                }
+            };
+            setTimeout(typeWriter, 500);
+
+            // Добавляем звуковые эффекты при наведении на кнопки
+            document.querySelectorAll('.btn').forEach(btn => {
+                btn.addEventListener('mouseenter', function() {
+                    // Создаем простой звуковой эффект
+                    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    const oscillator = audioContext.createOscillator();
+                    const gainNode = audioContext.createGain();
+                    
+                    oscillator.connect(gainNode);
+                    gainNode.connect(audioContext.destination);
+                    
+                    oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+                    oscillator.frequency.exponentialRampToValueAtTime(1200, audioContext.currentTime + 0.1);
+                    
+                    gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+                    
+                    oscillator.start(audioContext.currentTime);
+                    oscillator.stop(audioContext.currentTime + 0.1);
+                });
+            });
+        });
+    </script>
+</body>
+</html>
