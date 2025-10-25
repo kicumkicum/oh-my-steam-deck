@@ -12,14 +12,14 @@ IGPU_CACHE="$HOME/.steam/steam/steamapps/shadercache_igpu"
 switch_shadercache() {
   case "$1" in
     egpu)
-      echo "[egpu] Switching shadercache to eGPU..."
-      # Create directories if they don't exist
+      echo "[egpu] Переключение shadercache на eGPU..."
+      # Создаем директории, если их нет
       [ -d "$EGPU_CACHE" ] || mkdir -p "$EGPU_CACHE"
       [ -L "$CACHE_LINK" ] && rm -f "$CACHE_LINK"
       ln -s "$EGPU_CACHE" "$CACHE_LINK"
       ;;
     igpu)
-      echo "[egpu] Switching shadercache to iGPU..."
+      echo "[egpu] Переключение shadercache на iGPU..."
       [ -d "$IGPU_CACHE" ] || mkdir -p "$IGPU_CACHE"
       [ -L "$CACHE_LINK" ] && rm -f "$CACHE_LINK"
       ln -s "$IGPU_CACHE" "$CACHE_LINK"
@@ -29,13 +29,13 @@ switch_shadercache() {
 
 GPU_COUNT=$(lspci | grep -i 'VGA\|3D' | wc -l)
 if [ "$GPU_COUNT" -lt 2 ]; then
-    echo "Found less than two GPUs ($GPU_COUNT). Switching shadercache to iGPU and exiting."
+    echo "Найдено меньше двух видеокарт ($GPU_COUNT). Переключаем shadercache на iGPU и выходим."
     switch_shadercache igpu
     exit 0
 fi
 
 (
-# Wait until unbind file becomes available
+# Ждем пока файл unbind станет доступен
 while [ ! -w "$UNBIND_PATH" ]; do
     sleep 1
 done
@@ -45,6 +45,6 @@ echo "$EGPU_PCI" > "$UNBIND_PATH"
 sleep 10
 echo "$EGPU_PCI" > "$BIND_PATH"
 
-# After binding eGPU, switch shadercache to eGPU
+# После привязки eGPU переключаем shadercache на eGPU
 switch_shadercache egpu
 ) &

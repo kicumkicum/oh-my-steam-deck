@@ -9,7 +9,7 @@ from tabulate import tabulate
 
 # TODO Add banners from banner_vertical.png, banner_horizontal.png to game in steam library
 
-# ------------------ Steam Integration ------------------
+# ------------------ Работа с Steam ------------------
 
 def get_steam_userdata_dir():
     home = Path.home()
@@ -22,7 +22,7 @@ def get_steam_userdata_dir():
     for path in candidates:
         if path.exists():
             return path
-    raise FileNotFoundError("❌ Could not find Steam userdata folder")
+    raise FileNotFoundError("❌ Не удалось найти папку Steam userdata")
 
 def find_shortcuts_vdf():
     userdata = get_steam_userdata_dir()
@@ -31,7 +31,7 @@ def find_shortcuts_vdf():
             config = userdir / "config" / "shortcuts.vdf"
             if config.exists():
                 return config
-    raise FileNotFoundError("❌ shortcuts.vdf file not found")
+    raise FileNotFoundError("❌ Файл shortcuts.vdf не найден")
 
 def read_shortcuts(path):
     with open(path, "rb") as f:
@@ -42,7 +42,7 @@ def write_shortcuts(path, data):
     with open(path, "wb") as f:
         vdf.binary_dump(data, f)
 
-# ------------------ Games ------------------
+# ------------------ Игры ------------------
 
 def sanitize_game_name(name: str) -> str:
     name = re.sub(r"\[.*?\]|\(.*?\)|-[^-]+$", "", name)
@@ -91,24 +91,24 @@ def game_exists(existing, exe_path):
 
 def find_banners(game_folder):
     """
-    Searches for specific banner files in the game folder.
-    Returns paths (horizontal, vertical), or empty strings.
+    Ищет конкретные файлы баннеров в папке игры.
+    Возвращает пути (горизонтальный, вертикальный), либо пустые строки.
     """
     horizontal = os.path.join(game_folder, "banner_horizontal.png")
     vertical = os.path.join(game_folder, "banner_vertical.png")
     return (horizontal if os.path.isfile(horizontal) else "",
             vertical if os.path.isfile(vertical) else "")
 
-# ------------------ Main Logic ------------------
+# ------------------ Основная логика ------------------
 
 def main():
     if len(sys.argv) < 2:
-        print("Usage: python add-to-steam.py /path/to/games/folder")
+        print("Использование: python add-to-steam.py /путь/к/папке/с/играми")
         sys.exit(1)
 
     folder = Path(sys.argv[1]).expanduser().resolve()
     if not folder.is_dir():
-        print(f"❌ Error: {folder} — not a directory.")
+        print(f"❌ Ошибка: {folder} — не папка.")
         sys.exit(1)
 
     try:
@@ -125,7 +125,7 @@ def main():
 
     games, no_exec_dirs = scan_games(folder)
 
-    # folder for banners
+    # папка для баннеров
     grid_path = None
     userdata = get_steam_userdata_dir()
     for userdir in userdata.iterdir():
@@ -135,7 +135,7 @@ def main():
             grid_path = grid_path_candidate
             break
     if grid_path is None:
-        print("❌ Could not determine Steam banners folder")
+        print("❌ Не удалось определить папку для баннеров Steam")
         sys.exit(1)
 
     for game in games:
@@ -144,18 +144,18 @@ def main():
         new_name = sanitize_game_name(old_name)
 
         if game_exists(existing, exe_path):
-            results.append(["🟡 Already exists", old_name, new_name, ""])
+            results.append(["🟡 Уже есть", old_name, new_name, ""])
         else:
             app_id = str(next_index)
-            # use cleaned name
+            # используем очищенное имя
             game["AppName"] = new_name
             existing[app_id] = game
             next_index += 1
-            status = "✅ Added"
+            status = "✅ Добавлена"
 
             horizontal, vertical = find_banners(Path(exe_path).parent)
 
-            # copy banners to Steam grid
+            # копируем баннеры в Steam grid
             horizontal_path_str = ""
             vertical_path_str = ""
             if horizontal:
@@ -169,29 +169,28 @@ def main():
 
             banner_paths = ", ".join(p for p in [horizontal_path_str, vertical_path_str] if p)
             if banner_paths:
-                status += " + banners"
+                status += " + баннеры"
 
             results.append([status, old_name, new_name, banner_paths])
 
     for name in no_exec_dirs:
-        results.append(["⚠️ Executable file not found", name, "", ""])
+        results.append(["⚠️ Не найден исполняемый файл", name, "", ""])
 
     if any("✅" in r[0] for r in results):
         write_shortcuts(shortcuts_path, shortcuts)
 
-    print(tabulate(results, headers=["Status", "Old Name", "New Name", "Banner Paths"], tablefmt="grid", stralign="center"))
+    print(tabulate(results, headers=["Статус", "Старое имя", "Новое имя", "Путь до баннеров"], tablefmt="grid", stralign="center"))
     added_count = sum(1 for r in results if "✅" in r[0])
     if added_count:
-        print(f"\n✅ Added {added_count} new games. Restart Steam for them to appear.")
+        print(f"\n✅ Добавлено {added_count} новых игр. Перезапусти Steam, чтобы они появились.")
     else:
-        print("\n🎮 No new games added.")
+        print("\n🎮 Новых игр не добавлено.")
 
 if __name__ == "__main__":
     try:
         main()
     except Exception as e:
         import traceback
-        print("❌ Script error:")
+        print("❌ Ошибка в скрипте:")
         traceback.print_exc()
         sys.exit(1)
-
