@@ -11,6 +11,12 @@
 - Установить пароль: `passwd`
 - Включить SSH: `sudo systemctl enable sshd --now`
 
+### Не устанавливаются приложения из Discovery
+
+Инструкция - https://boosty.to/steamdecks/posts/2edba56d-9732-44b4-a143-2961b9e843ec
+
+Краткий пересказ. Выполни `bash <(curl -fsSL https://raw.githubusercontent.com/Nospire/fx/main/i)`. Нажми `1`. Следуй инструкциям
+
 ### Сохранить игры и сохранения
 
 Когда Steam сбрасывает систему, он удаляет директорию `~/.local` с вашими играми, сохранениями и настройками. Вы можете сохранить игры и сохранения:
