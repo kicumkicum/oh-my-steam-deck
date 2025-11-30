@@ -4,8 +4,12 @@ set -e
 # Unit paths
 UNIT_DIR="/etc/systemd/system"
 SRC_DIR="/home/deck/p/oh-my-steam-deck/bin"
-AUTOMOUNT_UNIT="automount-nfs-share.automount"
-MOUNT_UNIT="automount-nfs-share.mount"
+#AUTOMOUNT_UNIT="automount-nfs-share.automount"
+
+# Mount dir and unit name must has similar names
+AUTOMOUNT_UNIT="home-deck-games-bb.lan.automount"
+#MOUNT_UNIT="automount-nfs-share.mount"
+MOUNT_UNIT="home-deck-games-bb.lan.mount"
 
 echo "Copying units to $UNIT_DIR..."
 sudo cp "$SRC_DIR/$AUTOMOUNT_UNIT" "$UNIT_DIR/"
