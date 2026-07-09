@@ -1,0 +1,3 @@
+[submodule "libs/amdgpu-fan"]
+	path = libs/amdgpu-fan
+	url = https://github.com/chestm007/amdgpu-fan.git

@@ -128,3 +128,11 @@ lspci |grep VGA
 journalctl --user -u gamescope-session.service -b
 
 TODO
+
+### AMDGPU fan curve
+
+This repo includes `amdgpu-fan` as a submodule in `libs/amdgpu-fan` and local
+SteamOS install files in `bin/amdgpu-fan.*`.
+
+- Local guide: [bin/amdgpu-fan.readme.md](bin/amdgpu-fan.readme.md)
+- Upstream docs: https://github.com/chestm007/amdgpu-fan

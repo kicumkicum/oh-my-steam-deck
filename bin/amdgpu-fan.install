@@ -1,0 +1,63 @@
+#!/bin/bash
+set -euo pipefail
+
+# Install amdgpu-fan from the repository submodule into /home/deck/libs and
+# register a local systemd service. This keeps the service definition in /etc,
+# which is more stable across SteamOS updates than package-owned unit files.
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+SOURCE_DIR="$REPO_DIR/libs/amdgpu-fan"
+
+if [ ! -d "$SOURCE_DIR/amdgpu_fan" ]; then
+    echo "Missing submodule at $SOURCE_DIR" >&2
+    echo "Run: git submodule update --init --recursive" >&2
+    exit 1
+fi
+
+if ! /usr/bin/python - <<'PY' >/dev/null 2>&1
+import numpy
+import yaml
+PY
+then
+    cat >&2 <<'EOF'
+Missing Python dependencies: numpy and/or PyYAML.
+
+On SteamOS/Arch they are usually provided by:
+  sudo pacman -S python-numpy python-yaml
+
+If SteamOS readonly mode blocks pacman, temporarily disable it first:
+  sudo steamos-readonly disable
+EOF
+    exit 1
+fi
+
+sudo mkdir -p /home/deck/libs /home/deck/bin
+sudo rm -rf /home/deck/libs/amdgpu-fan
+sudo cp -a "$SOURCE_DIR" /home/deck/libs/amdgpu-fan
+
+sudo cp "$SCRIPT_DIR/amdgpu-fan.boot.sh" /home/deck/bin/amdgpu-fan.boot.sh
+sudo cp "$SCRIPT_DIR/amdgpu-fan-detect.sh" /home/deck/bin/amdgpu-fan-detect.sh
+sudo chmod 0755 /home/deck/bin/amdgpu-fan.boot.sh /home/deck/bin/amdgpu-fan-detect.sh
+
+if [ ! -f /etc/amdgpu-fan.yml ]; then
+    sudo cp "$SCRIPT_DIR/amdgpu-fan.yml" /etc/amdgpu-fan.yml
+    echo "Installed default config to /etc/amdgpu-fan.yml"
+else
+    echo "Keeping existing /etc/amdgpu-fan.yml"
+    echo "Reference config is available at $SCRIPT_DIR/amdgpu-fan.yml"
+fi
+
+sudo cp "$SCRIPT_DIR/amdgpu-fan.service" /etc/systemd/system/amdgpu-fan.service
+sudo systemctl daemon-reload
+sudo systemctl enable amdgpu-fan.service
+
+cat <<'EOF'
+COMPLETE
+
+Review /etc/amdgpu-fan.yml before starting the service.
+Useful commands:
+  /home/deck/bin/amdgpu-fan-detect.sh
+  sudo systemctl start amdgpu-fan.service
+  systemctl status --no-pager -l amdgpu-fan.service
+EOF

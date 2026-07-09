@@ -134,3 +134,11 @@ lspci |grep VGA
 journalctl --user -u gamescope-session.service -b
 
 TODO
+
+### Кривая вентилятора AMDGPU
+
+В репозиторий добавлен `amdgpu-fan` как submodule в `libs/amdgpu-fan`, а
+локальные файлы установки для SteamOS лежат в `bin/amdgpu-fan.*`.
+
+- Локальная инструкция: [bin/amdgpu-fan.readme.md](bin/amdgpu-fan.readme.md)
+- Основная документация: https://github.com/chestm007/amdgpu-fan

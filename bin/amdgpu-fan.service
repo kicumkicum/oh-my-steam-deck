@@ -1,0 +1,15 @@
+[Unit]
+Description=AMDGPU fan curve controller
+Documentation=https://github.com/chestm007/amdgpu-fan
+After=systemd-modules-load.service multi-user.target
+ConditionPathExists=/etc/amdgpu-fan.yml
+
+[Service]
+Type=simple
+ExecStart=/home/deck/bin/amdgpu-fan.boot.sh
+Restart=always
+RestartSec=2
+User=root
+
+[Install]
+WantedBy=multi-user.target

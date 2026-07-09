@@ -1,0 +1,26 @@
+# Fan control matrix for upstream amdgpu-fan.
+# Temperatures are Celsius. Speeds are fan duty percent.
+#
+# Important: upstream amdgpu-fan reads temp1_input, which is usually the AMDGPU
+# "edge" temperature, not "junction"/hotspot. Check with:
+#   sensors
+#   /home/deck/bin/amdgpu-fan-detect.sh
+#
+# Optional card pinning:
+#   Run /home/deck/bin/amdgpu-fan-detect.sh and uncomment the card that maps to
+#   the external GPU. Leave cards unset if only the eGPU exposes PWM controls.
+#
+# cards:
+# - card0
+
+speed_matrix:
+- [0, 20]
+- [45, 28]
+- [55, 40]
+- [65, 55]
+- [75, 75]
+- [82, 100]
+
+# How much the temperature should drop before fan speed is decreased. This
+# avoids rapid fan speed oscillation around a curve point.
+temp_drop: 5
