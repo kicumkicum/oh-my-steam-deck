@@ -1,5 +1,5 @@
 #!/bin/bash
-# Version: 5
+# Version: 6
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -27,6 +27,54 @@ find_control_home_media_repo() {
     done
 
     return 1
+}
+
+write_default_env() {
+    cat <<EOF
+# Version: 3
+CONTROL_HOME_MEDIA_REPO=$APP_DIR
+MEDIA_CEC_REFRESH_COMMAND=distrobox enter media-cec -- cec-ctl -d /dev/cec0 --playback --to 0 --image-view-on --to 0 --active-source phys-addr=1.0.0.0
+MEDIA_CEC_KEY_RED_COMMAND=$BIN_DIR/steam-gamepad-shortcut.py home
+MEDIA_CEC_KEY_GREEN_COMMAND=$BIN_DIR/steam-gamepad-shortcut.py home+a
+MEDIA_CEC_KEY_YELLOW_COMMAND=$BIN_DIR/steam-gamepad-shortcut.py home+x
+# MEDIA_CEC_KEY_BLUE_COMMAND=
+EOF
+}
+
+install_env_file() {
+    local tmp_env
+    tmp_env="$(mktemp)"
+    write_default_env > "$tmp_env"
+
+    if [ ! -f "$ENV_FILE" ]; then
+        install -m 0644 "$tmp_env" "$ENV_FILE"
+        rm -f "$tmp_env"
+        echo "Created $ENV_FILE"
+        return
+    fi
+
+    echo "Existing config: $ENV_FILE"
+    echo
+    echo "----- current $ENV_FILE -----"
+    sed -n '1,200p' "$ENV_FILE"
+    echo "----- new default config -----"
+    sed -n '1,200p' "$tmp_env"
+    echo "------------------------------"
+    echo
+
+    read -r -p "Overwrite existing config with the new default? [y/N] " answer
+    case "$answer" in
+        y|Y|yes|YES)
+            install -m 0644 "$tmp_env" "$ENV_FILE"
+            echo "Overwritten $ENV_FILE"
+            ;;
+        *)
+            echo "Keeping existing $ENV_FILE"
+            echo "Reference config: $SCRIPT_DIR/control-home-media-cec.env.example"
+            ;;
+    esac
+
+    rm -f "$tmp_env"
 }
 
 BIN_DIR="$HOME/bin"
@@ -68,21 +116,7 @@ rm -f "$BIN_DIR/cec-input-receiver-volume.py" "$BIN_DIR/steamos-wakeup-media-cec
 install -m 0644 "$SCRIPT_DIR/$STEAM_GAMEPAD_UNIT" "$USER_UNIT_DIR/$STEAM_GAMEPAD_UNIT"
 install -m 0644 "$SCRIPT_DIR/$CEC_BUTTONS_UNIT" "$USER_UNIT_DIR/$CEC_BUTTONS_UNIT"
 
-if [ ! -f "$ENV_FILE" ]; then
-    cat > "$ENV_FILE" <<EOF
-# Version: 2
-CONTROL_HOME_MEDIA_REPO=$APP_DIR
-MEDIA_CEC_REFRESH_COMMAND=distrobox enter media-cec -- cec-ctl -d /dev/cec0 --playback --to 0 --image-view-on --to 0 --active-source phys-addr=1.0.0.0
-MEDIA_CEC_KEY_RED_COMMAND=$BIN_DIR/steam-gamepad-shortcut.py home
-MEDIA_CEC_KEY_GREEN_COMMAND=$BIN_DIR/steam-gamepad-shortcut.py home+a
-MEDIA_CEC_KEY_YELLOW_COMMAND=$BIN_DIR/steam-gamepad-shortcut.py home+x
-# MEDIA_CEC_KEY_BLUE_COMMAND=
-EOF
-    echo "Created $ENV_FILE"
-else
-    echo "Keeping existing $ENV_FILE"
-    echo "Reference config: $SCRIPT_DIR/control-home-media-cec.env.example"
-fi
+install_env_file
 
 systemctl --user daemon-reload
 systemctl --user enable --now "$STEAM_GAMEPAD_UNIT"
