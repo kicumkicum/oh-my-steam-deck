@@ -1,5 +1,5 @@
 #!/bin/bash
-# Version: 4
+# Version: 5
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -73,7 +73,7 @@ if [ ! -f "$ENV_FILE" ]; then
 # Version: 2
 CONTROL_HOME_MEDIA_REPO=$APP_DIR
 MEDIA_CEC_REFRESH_COMMAND=distrobox enter media-cec -- cec-ctl -d /dev/cec0 --playback --to 0 --image-view-on --to 0 --active-source phys-addr=1.0.0.0
-MEDIA_CEC_KEY_RED_COMMAND=env DISPLAY=:0 xdotool key shift+Tab
+MEDIA_CEC_KEY_RED_COMMAND=$BIN_DIR/steam-gamepad-shortcut.py home
 MEDIA_CEC_KEY_GREEN_COMMAND=$BIN_DIR/steam-gamepad-shortcut.py home+a
 MEDIA_CEC_KEY_YELLOW_COMMAND=$BIN_DIR/steam-gamepad-shortcut.py home+x
 # MEDIA_CEC_KEY_BLUE_COMMAND=
