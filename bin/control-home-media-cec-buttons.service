@@ -1,0 +1,17 @@
+# Version: 1
+
+[Unit]
+Description=Control Home Media CEC remote button listener
+Documentation=https://github.com/
+Wants=control-home-media-steam-gamepad.service
+After=control-home-media-steam-gamepad.service
+
+[Service]
+Type=simple
+EnvironmentFile=%h/.config/control-home-media/media-cec.env
+ExecStart=/usr/bin/env python3 %h/bin/cec-input-receiver-volume.py
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=default.target

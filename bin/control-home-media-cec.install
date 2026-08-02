@@ -1,0 +1,67 @@
+#!/bin/bash
+# Version: 1
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+
+BIN_DIR="$HOME/bin"
+USER_UNIT_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/systemd/user"
+CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/control-home-media"
+ENV_FILE="$CONFIG_DIR/media-cec.env"
+
+STEAM_GAMEPAD_UNIT="control-home-media-steam-gamepad.service"
+CEC_BUTTONS_UNIT="control-home-media-cec-buttons.service"
+
+echo "Installing Control Home Media CEC services from $REPO_DIR"
+
+mkdir -p "$BIN_DIR" "$USER_UNIT_DIR" "$CONFIG_DIR"
+
+install -m 0755 "$REPO_DIR/scripts/steam-gamepad-shortcut.py" "$BIN_DIR/steam-gamepad-shortcut.py"
+install -m 0755 "$REPO_DIR/scripts/cec-input-receiver-volume.py" "$BIN_DIR/cec-input-receiver-volume.py"
+install -m 0755 "$REPO_DIR/scripts/steamos-wakeup-media-cec.sh" "$BIN_DIR/steamos-wakeup-media-cec.sh"
+
+install -m 0644 "$SCRIPT_DIR/$STEAM_GAMEPAD_UNIT" "$USER_UNIT_DIR/$STEAM_GAMEPAD_UNIT"
+install -m 0644 "$SCRIPT_DIR/$CEC_BUTTONS_UNIT" "$USER_UNIT_DIR/$CEC_BUTTONS_UNIT"
+
+if [ ! -f "$ENV_FILE" ]; then
+    PHP_BIN="$(command -v php || true)"
+
+    cat > "$ENV_FILE" <<EOF
+# Version: 1
+CONTROL_HOME_MEDIA_REPO=$REPO_DIR
+CONTROL_MEDIA=$REPO_DIR/control_media.py
+CONTROL_MEDIA_CONFIG=$REPO_DIR/control_media.config.json
+${PHP_BIN:+CONTROL_MEDIA_PHP=$PHP_BIN}
+MEDIA_RECEIVER_ID=192.168.1.112
+MEDIA_RECEIVER_VOLUME_STEP=1
+MEDIA_CEC_REFRESH_COMMAND=distrobox enter media-cec -- cec-ctl -d /dev/cec0 --playback --to 0 --image-view-on --to 0 --active-source phys-addr=1.0.0.0
+MEDIA_CEC_KEY_RED_COMMAND=env DISPLAY=:0 xdotool key shift+Tab
+MEDIA_CEC_KEY_GREEN_COMMAND=$BIN_DIR/steam-gamepad-shortcut.py home+a
+MEDIA_CEC_KEY_YELLOW_COMMAND=$BIN_DIR/steam-gamepad-shortcut.py home+x
+# MEDIA_CEC_KEY_BLUE_COMMAND=
+EOF
+    echo "Created $ENV_FILE"
+else
+    echo "Keeping existing $ENV_FILE"
+    echo "Reference config: $SCRIPT_DIR/control-home-media-cec.env.example"
+fi
+
+systemctl --user daemon-reload
+systemctl --user enable --now "$STEAM_GAMEPAD_UNIT"
+systemctl --user enable --now "$CEC_BUTTONS_UNIT"
+
+cat <<EOF
+COMPLETE
+
+Useful commands:
+  systemctl --user status --no-pager -l $STEAM_GAMEPAD_UNIT
+  systemctl --user status --no-pager -l $CEC_BUTTONS_UNIT
+  journalctl --user -u $CEC_BUTTONS_UNIT -f
+
+To change button bindings, edit:
+  $ENV_FILE
+
+Then apply:
+  systemctl --user restart $CEC_BUTTONS_UNIT
+EOF
