@@ -1,5 +1,5 @@
 #!/bin/bash
-# Version: 3
+# Version: 4
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -17,14 +17,10 @@ find_control_home_media_repo() {
 
     for candidate in \
         "$BUNDLE_DIR" \
-        "$REPO_DIR" \
-        "$(cd "$REPO_DIR/.." && pwd)/control-home-media" \
-        "$HOME/projects/control-home-media" \
-        "$HOME/p/r/control-home-media"
+        "$REPO_DIR"
     do
         if [ -f "$candidate/scripts/steam-gamepad-shortcut.py" ] &&
-            [ -f "$candidate/scripts/cec-input-receiver-volume.py" ] &&
-            [ -f "$candidate/control_media.py" ]; then
+            [ -f "$candidate/scripts/cec-input-color-buttons.py" ]; then
             printf '%s\n' "$candidate"
             return 0
         fi
@@ -37,7 +33,6 @@ BIN_DIR="$HOME/bin"
 USER_UNIT_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/systemd/user"
 CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/control-home-media"
 ENV_FILE="$CONFIG_DIR/media-cec.env"
-CONFIG_FILE="$CONFIG_DIR/control_media.config.json"
 SOURCE_REPO="$(find_control_home_media_repo || true)"
 
 STEAM_GAMEPAD_UNIT="control-home-media-steam-gamepad.service"
@@ -47,63 +42,36 @@ echo "Installing Control Home Media CEC services from $REPO_DIR"
 
 if [ -z "$SOURCE_REPO" ]; then
     cat >&2 <<EOF
-Could not find control-home-media runtime scripts.
+Could not find bundled control-home-media CEC color button runtime scripts.
 
-Run from the control-home-media repository, put it next to this repository, or pass:
-  CONTROL_HOME_MEDIA_REPO=/path/to/control-home-media $0
+Run this installer from oh-my-steam-deck, or pass:
+  CONTROL_HOME_MEDIA_REPO=/path/to/runtime $0
 EOF
     exit 1
 fi
 
-echo "Using Control Home Media runtime from $SOURCE_REPO"
+echo "Using Control Home Media CEC color button runtime from $SOURCE_REPO"
 
 mkdir -p "$BIN_DIR" "$USER_UNIT_DIR" "$CONFIG_DIR" "$APP_DIR"
 
-install -m 0755 "$SOURCE_REPO/control_media.py" "$APP_DIR/control_media.py"
-install -m 0644 "$SOURCE_REPO/control_media.config.example.json" "$APP_DIR/control_media.config.example.json"
-
-mkdir -p "$APP_DIR/scripts" "$APP_DIR/harman-kardon-remote"
+rm -f "$APP_DIR/control_media.py" "$APP_DIR/control_media.config.example.json"
+rm -rf "$APP_DIR/harman-kardon-remote"
+mkdir -p "$APP_DIR/scripts"
 install -m 0755 "$SOURCE_REPO/scripts/steam-gamepad-shortcut.py" "$APP_DIR/scripts/steam-gamepad-shortcut.py"
-install -m 0755 "$SOURCE_REPO/scripts/cec-input-receiver-volume.py" "$APP_DIR/scripts/cec-input-receiver-volume.py"
-install -m 0755 "$SOURCE_REPO/scripts/steamos-wakeup-media-cec.sh" "$APP_DIR/scripts/steamos-wakeup-media-cec.sh"
-
-if [ -d "$SOURCE_REPO/harman-kardon-remote/HKAPI" ] &&
-    [ -f "$SOURCE_REPO/harman-kardon-remote/control.php" ]; then
-    install -m 0755 "$SOURCE_REPO/harman-kardon-remote/control.php" "$APP_DIR/harman-kardon-remote/control.php"
-    rm -rf "$APP_DIR/harman-kardon-remote/HKAPI"
-    mkdir -p "$APP_DIR/harman-kardon-remote/HKAPI"
-    tar -C "$SOURCE_REPO/harman-kardon-remote/HKAPI" --exclude='./.git' -cf - . |
-        tar -C "$APP_DIR/harman-kardon-remote/HKAPI" -xf -
-else
-    echo "Warning: Harman Kardon PHP adapter was not found in $SOURCE_REPO/harman-kardon-remote" >&2
-    echo "Receiver volume keys will fail until it is installed next to $APP_DIR/control_media.py." >&2
-fi
-
-if [ ! -f "$CONFIG_FILE" ]; then
-    install -m 0644 "$SOURCE_REPO/control_media.config.example.json" "$CONFIG_FILE"
-    echo "Created $CONFIG_FILE"
-else
-    echo "Keeping existing $CONFIG_FILE"
-fi
+install -m 0755 "$SOURCE_REPO/scripts/cec-input-color-buttons.py" "$APP_DIR/scripts/cec-input-color-buttons.py"
+rm -f "$APP_DIR/scripts/cec-input-receiver-volume.py" "$APP_DIR/scripts/steamos-wakeup-media-cec.sh"
 
 install -m 0755 "$APP_DIR/scripts/steam-gamepad-shortcut.py" "$BIN_DIR/steam-gamepad-shortcut.py"
-install -m 0755 "$APP_DIR/scripts/cec-input-receiver-volume.py" "$BIN_DIR/cec-input-receiver-volume.py"
-install -m 0755 "$APP_DIR/scripts/steamos-wakeup-media-cec.sh" "$BIN_DIR/steamos-wakeup-media-cec.sh"
+install -m 0755 "$APP_DIR/scripts/cec-input-color-buttons.py" "$BIN_DIR/cec-input-color-buttons.py"
+rm -f "$BIN_DIR/cec-input-receiver-volume.py" "$BIN_DIR/steamos-wakeup-media-cec.sh"
 
 install -m 0644 "$SCRIPT_DIR/$STEAM_GAMEPAD_UNIT" "$USER_UNIT_DIR/$STEAM_GAMEPAD_UNIT"
 install -m 0644 "$SCRIPT_DIR/$CEC_BUTTONS_UNIT" "$USER_UNIT_DIR/$CEC_BUTTONS_UNIT"
 
 if [ ! -f "$ENV_FILE" ]; then
-    PHP_BIN="$(command -v php || true)"
-
     cat > "$ENV_FILE" <<EOF
-# Version: 1
+# Version: 2
 CONTROL_HOME_MEDIA_REPO=$APP_DIR
-CONTROL_MEDIA=$APP_DIR/control_media.py
-CONTROL_MEDIA_CONFIG=$CONFIG_FILE
-${PHP_BIN:+CONTROL_MEDIA_PHP=$PHP_BIN}
-MEDIA_RECEIVER_ID=192.168.1.112
-MEDIA_RECEIVER_VOLUME_STEP=1
 MEDIA_CEC_REFRESH_COMMAND=distrobox enter media-cec -- cec-ctl -d /dev/cec0 --playback --to 0 --image-view-on --to 0 --active-source phys-addr=1.0.0.0
 MEDIA_CEC_KEY_RED_COMMAND=env DISPLAY=:0 xdotool key shift+Tab
 MEDIA_CEC_KEY_GREEN_COMMAND=$BIN_DIR/steam-gamepad-shortcut.py home+a

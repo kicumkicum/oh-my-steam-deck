@@ -1,7 +1,7 @@
-# Version: 1
+# Version: 2
 
 [Unit]
-Description=Control Home Media CEC remote button listener
+Description=Control Home Media CEC color button listener
 Documentation=https://github.com/
 Wants=control-home-media-steam-gamepad.service
 After=control-home-media-steam-gamepad.service
@@ -9,7 +9,7 @@ After=control-home-media-steam-gamepad.service
 [Service]
 Type=simple
 EnvironmentFile=%h/.config/control-home-media/media-cec.env
-ExecStart=/usr/bin/env python3 %h/bin/cec-input-receiver-volume.py
+ExecStart=/usr/bin/env python3 %h/bin/cec-input-color-buttons.py
 Restart=always
 RestartSec=3
 
