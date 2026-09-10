@@ -1,5 +1,5 @@
 #!/bin/bash
-# Version: 7
+# Version: 8
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -38,7 +38,7 @@ write_default_env() {
     fi
 
     cat <<EOF
-# Version: 4
+# Version: 5
 CONTROL_HOME_MEDIA_REPO=$APP_DIR
 MEDIA_CEC_STATUS_COMMAND=$cec_status_command
 MEDIA_CEC_SAFE_INIT_COMMAND=$cec_status_command
@@ -48,6 +48,10 @@ MEDIA_CEC_KEY_RED_COMMAND=$BIN_DIR/steam-gamepad-shortcut.py home
 MEDIA_CEC_KEY_GREEN_COMMAND=$BIN_DIR/steam-gamepad-shortcut.py home+a
 MEDIA_CEC_KEY_YELLOW_COMMAND=$BIN_DIR/steam-gamepad-shortcut.py home+x
 # MEDIA_CEC_KEY_BLUE_COMMAND=
+MEDIA_CEC_KEY_1_COMMAND=$BIN_DIR/steam-gamepad-shortcut.py a
+MEDIA_CEC_KEY_2_COMMAND=$BIN_DIR/steam-gamepad-shortcut.py b
+MEDIA_CEC_KEY_4_COMMAND=$BIN_DIR/steam-gamepad-shortcut.py x
+MEDIA_CEC_KEY_5_COMMAND=$BIN_DIR/steam-gamepad-shortcut.py y
 EOF
 }
 
@@ -100,7 +104,7 @@ echo "Installing Control Home Media CEC services from $REPO_DIR"
 
 if [ -z "$SOURCE_REPO" ]; then
     cat >&2 <<EOF
-Could not find bundled control-home-media CEC color button runtime scripts.
+Could not find bundled control-home-media CEC remote button runtime scripts.
 
 Run this installer from oh-my-steam-deck, or pass:
   CONTROL_HOME_MEDIA_REPO=/path/to/runtime $0
@@ -108,7 +112,7 @@ EOF
     exit 1
 fi
 
-echo "Using Control Home Media CEC color button runtime from $SOURCE_REPO"
+echo "Using Control Home Media CEC remote button runtime from $SOURCE_REPO"
 
 mkdir -p "$BIN_DIR" "$USER_UNIT_DIR" "$CONFIG_DIR" "$APP_DIR"
 

@@ -1,7 +1,7 @@
-# Version: 2
+# Version: 3
 
 [Unit]
-Description=Control Home Media CEC color button listener
+Description=Control Home Media CEC remote button listener
 Documentation=https://github.com/
 Wants=control-home-media-steam-gamepad.service
 After=control-home-media-steam-gamepad.service

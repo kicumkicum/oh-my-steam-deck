@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Version: 2
+# Version: 3
 import argparse
 import errno
 import os
@@ -18,19 +18,43 @@ KEY_RED = 398
 KEY_GREEN = 399
 KEY_YELLOW = 400
 KEY_BLUE = 401
+KEY_1 = 2
+KEY_2 = 3
+KEY_4 = 5
+KEY_5 = 6
+KEY_NUMERIC_1 = 513
+KEY_NUMERIC_2 = 514
+KEY_NUMERIC_4 = 516
+KEY_NUMERIC_5 = 517
 
 KEY_NAMES = {
     KEY_RED: "KEY_RED",
     KEY_GREEN: "KEY_GREEN",
     KEY_YELLOW: "KEY_YELLOW",
     KEY_BLUE: "KEY_BLUE",
+    KEY_1: "KEY_1",
+    KEY_2: "KEY_2",
+    KEY_4: "KEY_4",
+    KEY_5: "KEY_5",
+    KEY_NUMERIC_1: "KEY_NUMERIC_1",
+    KEY_NUMERIC_2: "KEY_NUMERIC_2",
+    KEY_NUMERIC_4: "KEY_NUMERIC_4",
+    KEY_NUMERIC_5: "KEY_NUMERIC_5",
 }
 
-COLOR_KEY_COMMAND_ENV = {
+REMOTE_KEY_COMMAND_ENV = {
     KEY_RED: "MEDIA_CEC_KEY_RED_COMMAND",
     KEY_GREEN: "MEDIA_CEC_KEY_GREEN_COMMAND",
     KEY_YELLOW: "MEDIA_CEC_KEY_YELLOW_COMMAND",
     KEY_BLUE: "MEDIA_CEC_KEY_BLUE_COMMAND",
+    KEY_1: "MEDIA_CEC_KEY_1_COMMAND",
+    KEY_2: "MEDIA_CEC_KEY_2_COMMAND",
+    KEY_4: "MEDIA_CEC_KEY_4_COMMAND",
+    KEY_5: "MEDIA_CEC_KEY_5_COMMAND",
+    KEY_NUMERIC_1: "MEDIA_CEC_KEY_1_COMMAND",
+    KEY_NUMERIC_2: "MEDIA_CEC_KEY_2_COMMAND",
+    KEY_NUMERIC_4: "MEDIA_CEC_KEY_4_COMMAND",
+    KEY_NUMERIC_5: "MEDIA_CEC_KEY_5_COMMAND",
 }
 
 UNSAFE_CEC_COMMAND_TOKENS = {
@@ -338,13 +362,13 @@ def run_shell_command(command: str, dry_run: bool) -> None:
         raise RuntimeError(out or f"command failed with exit code {proc.returncode}")
 
 
-def handle_key_code(code: int, color_key_commands: dict[int, str], dry_run: bool) -> None:
+def handle_key_code(code: int, key_commands: dict[int, str], dry_run: bool) -> None:
     key_name = KEY_NAMES.get(code)
     if not key_name:
         return
 
     log(f"{key_name} value=1")
-    command = color_key_commands.get(code)
+    command = key_commands.get(code)
     if command:
         run_shell_command(command, dry_run)
 
@@ -352,20 +376,35 @@ def handle_key_code(code: int, color_key_commands: dict[int, str], dry_run: bool
 def read_events(
     event_device: str,
     include_repeats: bool,
-    color_key_commands: dict[int, str],
+    key_commands: dict[int, str],
     dry_run: bool,
 ) -> None:
     event_format = "llHHI"
     event_size = struct.calcsize(event_format)
 
-    log(f"Listening for CEC color button events on {event_device}")
-    mapped_color_keys = [
-        KEY_NAMES[code] for code in (KEY_RED, KEY_GREEN, KEY_YELLOW, KEY_BLUE) if color_key_commands.get(code)
+    log(f"Listening for CEC remote button events on {event_device}")
+    mapped_keys = [
+        KEY_NAMES[code]
+        for code in (
+            KEY_RED,
+            KEY_GREEN,
+            KEY_YELLOW,
+            KEY_BLUE,
+            KEY_1,
+            KEY_2,
+            KEY_4,
+            KEY_5,
+            KEY_NUMERIC_1,
+            KEY_NUMERIC_2,
+            KEY_NUMERIC_4,
+            KEY_NUMERIC_5,
+        )
+        if key_commands.get(code)
     ]
-    if mapped_color_keys:
-        log("Mapped color keys: " + ", ".join(mapped_color_keys))
+    if mapped_keys:
+        log("Mapped remote keys: " + ", ".join(mapped_keys))
     else:
-        log("No color key commands configured.")
+        log("No remote key commands configured.")
 
     try:
         event_file = open(event_device, "rb", buffering=0)
@@ -395,13 +434,13 @@ def read_events(
                 continue
 
             try:
-                handle_key_code(code, color_key_commands, dry_run)
+                handle_key_code(code, key_commands, dry_run)
             except RuntimeError as e:
                 log(f"Action failed: {e}")
 
 
 def main(argv: list[str]) -> int:
-    parser = argparse.ArgumentParser(description="Handle Linux CEC color button events.")
+    parser = argparse.ArgumentParser(description="Handle Linux CEC remote button events.")
     parser.add_argument(
         "--event-device",
         default=os.environ.get("MEDIA_CEC_INPUT_DEVICE"),
@@ -422,6 +461,10 @@ def main(argv: list[str]) -> int:
     parser.add_argument("--green-command", default=os.environ.get("MEDIA_CEC_KEY_GREEN_COMMAND"))
     parser.add_argument("--yellow-command", default=os.environ.get("MEDIA_CEC_KEY_YELLOW_COMMAND"))
     parser.add_argument("--blue-command", default=os.environ.get("MEDIA_CEC_KEY_BLUE_COMMAND"))
+    parser.add_argument("--key-1-command", default=os.environ.get("MEDIA_CEC_KEY_1_COMMAND"))
+    parser.add_argument("--key-2-command", default=os.environ.get("MEDIA_CEC_KEY_2_COMMAND"))
+    parser.add_argument("--key-4-command", default=os.environ.get("MEDIA_CEC_KEY_4_COMMAND"))
+    parser.add_argument("--key-5-command", default=os.environ.get("MEDIA_CEC_KEY_5_COMMAND"))
     parser.add_argument("--dry-run", action="store_true", help="Print commands without running them.")
     parser.add_argument(
         "--cec-refresh-command",
@@ -447,15 +490,23 @@ def main(argv: list[str]) -> int:
     parser.add_argument("--test-key-code", type=int, help="Handle one synthetic key code and exit.")
     args = parser.parse_args(argv)
 
-    color_key_commands = {
+    key_commands = {
         KEY_RED: args.red_command,
         KEY_GREEN: args.green_command,
         KEY_YELLOW: args.yellow_command,
         KEY_BLUE: args.blue_command,
+        KEY_1: args.key_1_command,
+        KEY_2: args.key_2_command,
+        KEY_4: args.key_4_command,
+        KEY_5: args.key_5_command,
+        KEY_NUMERIC_1: args.key_1_command,
+        KEY_NUMERIC_2: args.key_2_command,
+        KEY_NUMERIC_4: args.key_4_command,
+        KEY_NUMERIC_5: args.key_5_command,
     }
 
     if args.test_key_code is not None:
-        handle_key_code(args.test_key_code, color_key_commands, args.dry_run)
+        handle_key_code(args.test_key_code, key_commands, args.dry_run)
         return 0
 
     init_command = select_safe_init_command(args.cec_safe_init_command, args.cec_refresh_command)
@@ -471,7 +522,7 @@ def main(argv: list[str]) -> int:
             read_events(
                 event_device=event_device,
                 include_repeats=args.include_repeats,
-                color_key_commands=color_key_commands,
+                key_commands=key_commands,
                 dry_run=args.dry_run,
             )
         except RecoverableCecInputError as e:
