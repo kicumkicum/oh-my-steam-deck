@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
-# Version: 3
+# Version: 4
 import argparse
 import errno
+import fcntl
 import os
 import re
 import shlex
@@ -9,11 +10,15 @@ import struct
 import subprocess
 import sys
 import time
+from contextlib import nullcontext
 from dataclasses import dataclass
 from pathlib import Path
 
 
+EV_SYN = 0x00
 EV_KEY = 0x01
+SYN_REPORT = 0
+KEY_MAX = 0x2FF
 KEY_RED = 398
 KEY_GREEN = 399
 KEY_YELLOW = 400
@@ -65,6 +70,13 @@ UNSAFE_CEC_COMMAND_TOKENS = {
 }
 
 UNAVAILABLE_PHYSICAL_ADDRESSES = {"f.f.f.f", "ffff", "65535"}
+BUS_USB = 0x03
+UI_DEV_CREATE = 0x5501
+UI_DEV_DESTROY = 0x5502
+UI_DEV_SETUP = 0x405C5503
+UI_SET_EVBIT = 0x40045564
+UI_SET_KEYBIT = 0x40045565
+EVIOCGRAB = 0x40044590
 
 
 @dataclass(frozen=True)
@@ -79,6 +91,50 @@ class CecStatus:
 
 class RecoverableCecInputError(RuntimeError):
     pass
+
+
+class VirtualKeyboard:
+    def __init__(self, name: str = "Control Home Media CEC Keyboard") -> None:
+        self.name = name
+        self.fd: int | None = None
+
+    def __enter__(self) -> "VirtualKeyboard":
+        self.fd = os.open("/dev/uinput", os.O_WRONLY | os.O_NONBLOCK)
+        fcntl.ioctl(self.fd, UI_SET_EVBIT, EV_KEY)
+        for code in range(1, KEY_MAX + 1):
+            try:
+                fcntl.ioctl(self.fd, UI_SET_KEYBIT, code)
+            except OSError:
+                pass
+
+        setup = struct.pack(
+            "HHHH80sI",
+            BUS_USB,
+            0x1209,
+            0xCECC,
+            0x0001,
+            self.name.encode("utf-8")[:79],
+            0,
+        )
+        fcntl.ioctl(self.fd, UI_DEV_SETUP, setup)
+        fcntl.ioctl(self.fd, UI_DEV_CREATE, 0)
+        time.sleep(0.2)
+        return self
+
+    def __exit__(self, _exc_type: object, _exc: object, _tb: object) -> None:
+        if self.fd is None:
+            return
+
+        try:
+            fcntl.ioctl(self.fd, UI_DEV_DESTROY, 0)
+        finally:
+            os.close(self.fd)
+            self.fd = None
+
+    def forward(self, event_type: int, code: int, value: int) -> None:
+        if self.fd is None:
+            return
+        os.write(self.fd, struct.pack("llHHI", 0, 0, event_type, code, value))
 
 
 def log(message: str) -> None:
@@ -362,6 +418,30 @@ def run_shell_command(command: str, dry_run: bool) -> None:
         raise RuntimeError(out or f"command failed with exit code {proc.returncode}")
 
 
+def parse_bool(value: str | None, default: bool) -> bool:
+    if value is None:
+        return default
+    return value.lower() not in ("0", "false", "no", "off")
+
+
+def grab_input_device(event_file: object, enabled: bool, dry_run: bool) -> bool:
+    if not enabled or dry_run:
+        return False
+
+    fcntl.ioctl(event_file.fileno(), EVIOCGRAB, 1)
+    return True
+
+
+def release_input_device(event_file: object, grabbed: bool) -> None:
+    if not grabbed:
+        return
+
+    try:
+        fcntl.ioctl(event_file.fileno(), EVIOCGRAB, 0)
+    except OSError:
+        pass
+
+
 def handle_key_code(code: int, key_commands: dict[int, str], dry_run: bool) -> None:
     key_name = KEY_NAMES.get(code)
     if not key_name:
@@ -377,6 +457,7 @@ def read_events(
     event_device: str,
     include_repeats: bool,
     key_commands: dict[int, str],
+    grab_input: bool,
     dry_run: bool,
 ) -> None:
     event_format = "llHHI"
@@ -413,30 +494,48 @@ def read_events(
             raise RecoverableCecInputError(f"input device unavailable: {event_device}: {e}") from e
         raise
 
-    with event_file as f:
-        while True:
-            try:
-                data = f.read(event_size)
-            except OSError as e:
-                if e.errno in (errno.ENODEV, errno.ENOENT, errno.EIO):
-                    raise RecoverableCecInputError(f"input device disconnected: {event_device}: {e}") from e
-                raise
+    virtual_keyboard_context = VirtualKeyboard() if grab_input and not dry_run else None
+    context = virtual_keyboard_context or nullcontext()
 
-            if len(data) < event_size:
-                raise RecoverableCecInputError(f"short read from {event_device}")
+    with event_file as f, context as virtual_keyboard:
+        grabbed = grab_input_device(f, grab_input, dry_run)
+        if grabbed:
+            log("CEC input device grabbed; mapped keys will be suppressed and other keys forwarded.")
 
-            _sec, _usec, event_type, code, value = struct.unpack(event_format, data)
-            if event_type != EV_KEY:
-                continue
-            if value == 0:
-                continue
-            if value == 2 and not include_repeats:
-                continue
+        try:
+            while True:
+                try:
+                    data = f.read(event_size)
+                except OSError as e:
+                    if e.errno in (errno.ENODEV, errno.ENOENT, errno.EIO):
+                        raise RecoverableCecInputError(f"input device disconnected: {event_device}: {e}") from e
+                    raise
 
-            try:
-                handle_key_code(code, key_commands, dry_run)
-            except RuntimeError as e:
-                log(f"Action failed: {e}")
+                if len(data) < event_size:
+                    raise RecoverableCecInputError(f"short read from {event_device}")
+
+                _sec, _usec, event_type, code, value = struct.unpack(event_format, data)
+                command = key_commands.get(code)
+                suppress_event = event_type == EV_KEY and bool(command)
+
+                if not suppress_event and virtual_keyboard and event_type in (EV_KEY, EV_SYN):
+                    virtual_keyboard.forward(event_type, code, value)
+
+                if event_type != EV_KEY:
+                    continue
+                if value == 0:
+                    continue
+                if value == 2 and not include_repeats:
+                    continue
+                if not command:
+                    continue
+
+                try:
+                    handle_key_code(code, key_commands, dry_run)
+                except RuntimeError as e:
+                    log(f"Action failed: {e}")
+        finally:
+            release_input_device(f, grabbed)
 
 
 def main(argv: list[str]) -> int:
@@ -456,6 +555,12 @@ def main(argv: list[str]) -> int:
         action="store_true",
         default=os.environ.get("MEDIA_CEC_INPUT_INCLUDE_REPEATS") == "1",
         help="Also handle key repeat events where value=2.",
+    )
+    parser.add_argument(
+        "--grab-input",
+        action=argparse.BooleanOptionalAction,
+        default=parse_bool(os.environ.get("MEDIA_CEC_INPUT_GRAB"), True),
+        help="Grab the CEC input device, suppress mapped keys, and forward unmapped keys through uinput.",
     )
     parser.add_argument("--red-command", default=os.environ.get("MEDIA_CEC_KEY_RED_COMMAND"))
     parser.add_argument("--green-command", default=os.environ.get("MEDIA_CEC_KEY_GREEN_COMMAND"))
@@ -523,6 +628,7 @@ def main(argv: list[str]) -> int:
                 event_device=event_device,
                 include_repeats=args.include_repeats,
                 key_commands=key_commands,
+                grab_input=args.grab_input,
                 dry_run=args.dry_run,
             )
         except RecoverableCecInputError as e:
