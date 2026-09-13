@@ -1,11 +1,10 @@
-# Version: 1
+# Version: 2
 
 [Unit]
 Description=Watch /dev/cec0 for Control Home Media CEC recovery
 Documentation=https://github.com/
 
 [Path]
-PathExists=/dev/cec0
 PathChanged=/dev/cec0
 Unit=control-home-media-cec-recover.service
 

@@ -1,5 +1,5 @@
 #!/bin/bash
-# Version: 11
+# Version: 12
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

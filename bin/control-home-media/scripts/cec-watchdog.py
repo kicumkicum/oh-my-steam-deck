@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Version: 2
+# Version: 3
 import argparse
 import os
 import re
@@ -224,6 +224,18 @@ def check_once(args: argparse.Namespace) -> int:
         )
         return 0
 
+    if args.device_event:
+        ready, reason = cec_ready(args.cec_status_command)
+        if ready:
+            return restart_units(
+                args.cecd_unit,
+                args.listener_unit,
+                f"input missing after CEC device event while CEC is ready ({reason})",
+                args.dry_run,
+            )
+        log(f"CEC watchdog waiting: device event, input missing, CEC not ready: {reason}")
+        return 0
+
     ready, reason = cec_ready(args.cec_status_command)
     if not ready:
         clear_missing_since(state_file)
@@ -300,6 +312,11 @@ def main(argv: list[str]) -> int:
         "--force",
         action="store_true",
         help="Restart cecd and the listener immediately. Used by the /dev/cec0 path trigger.",
+    )
+    parser.add_argument(
+        "--device-event",
+        action="store_true",
+        help="Check state after a CEC device path event and recover only if input is still missing.",
     )
     parser.add_argument(
         "--reason",
