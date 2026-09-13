@@ -1,0 +1,10 @@
+# Version: 1
+
+[Unit]
+Description=Recover Control Home Media CEC after device changes
+Documentation=https://github.com/
+
+[Service]
+Type=oneshot
+EnvironmentFile=%h/.config/control-home-media/media-cec.env
+ExecStart=/usr/bin/env python3 %h/bin/cec-watchdog.py --force --reason "/dev/cec0 changed"

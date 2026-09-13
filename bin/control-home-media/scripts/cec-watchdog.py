@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Version: 1
+# Version: 2
 import argparse
 import os
 import re
@@ -193,6 +193,9 @@ def check_once(args: argparse.Namespace) -> int:
         log("CEC watchdog disabled.")
         return 0
 
+    if args.force:
+        return restart_units(args.cecd_unit, args.listener_unit, args.reason, args.dry_run)
+
     state_file = Path(args.state_file)
     cecd_active = service_active(args.cecd_unit)
     listener_active = service_active(args.listener_unit)
@@ -292,6 +295,16 @@ def main(argv: list[str]) -> int:
     parser.add_argument(
         "--listener-unit",
         default=os.environ.get("MEDIA_CEC_WATCHDOG_LISTENER_UNIT", DEFAULT_LISTENER_UNIT),
+    )
+    parser.add_argument(
+        "--force",
+        action="store_true",
+        help="Restart cecd and the listener immediately. Used by the /dev/cec0 path trigger.",
+    )
+    parser.add_argument(
+        "--reason",
+        default="CEC device path changed",
+        help="Recovery reason logged when --force is used.",
     )
     parser.add_argument("--dry-run", action="store_true", help="Print recovery command without running it.")
     args = parser.parse_args(argv)

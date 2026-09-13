@@ -1,5 +1,5 @@
 #!/bin/bash
-# Version: 10
+# Version: 11
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -106,6 +106,8 @@ STEAM_GAMEPAD_UNIT="control-home-media-steam-gamepad.service"
 CEC_BUTTONS_UNIT="control-home-media-cec-buttons.service"
 CEC_WATCHDOG_SERVICE="control-home-media-cec-watchdog.service"
 CEC_WATCHDOG_TIMER="control-home-media-cec-watchdog.timer"
+CEC_RECOVER_SERVICE="control-home-media-cec-recover.service"
+CEC_RECOVER_PATH="control-home-media-cec-recover.path"
 
 echo "Installing Control Home Media CEC services from $REPO_DIR"
 
@@ -139,14 +141,17 @@ rm -f "$BIN_DIR/cec-input-receiver-volume.py" "$BIN_DIR/steamos-wakeup-media-cec
 install -m 0644 "$SCRIPT_DIR/$STEAM_GAMEPAD_UNIT" "$USER_UNIT_DIR/$STEAM_GAMEPAD_UNIT"
 install -m 0644 "$SCRIPT_DIR/$CEC_BUTTONS_UNIT" "$USER_UNIT_DIR/$CEC_BUTTONS_UNIT"
 install -m 0644 "$SCRIPT_DIR/$CEC_WATCHDOG_SERVICE" "$USER_UNIT_DIR/$CEC_WATCHDOG_SERVICE"
-install -m 0644 "$SCRIPT_DIR/$CEC_WATCHDOG_TIMER" "$USER_UNIT_DIR/$CEC_WATCHDOG_TIMER"
+install -m 0644 "$SCRIPT_DIR/$CEC_RECOVER_SERVICE" "$USER_UNIT_DIR/$CEC_RECOVER_SERVICE"
+install -m 0644 "$SCRIPT_DIR/$CEC_RECOVER_PATH" "$USER_UNIT_DIR/$CEC_RECOVER_PATH"
 
 install_env_file
 
 systemctl --user daemon-reload
+systemctl --user disable --now "$CEC_WATCHDOG_TIMER" >/dev/null 2>&1 || true
+rm -f "$USER_UNIT_DIR/$CEC_WATCHDOG_TIMER"
 systemctl --user enable --now "$STEAM_GAMEPAD_UNIT"
 systemctl --user enable --now "$CEC_BUTTONS_UNIT"
-systemctl --user enable --now "$CEC_WATCHDOG_TIMER"
+systemctl --user enable --now "$CEC_RECOVER_PATH"
 
 cat <<EOF
 COMPLETE
@@ -154,9 +159,9 @@ COMPLETE
 Useful commands:
   systemctl --user status --no-pager -l $STEAM_GAMEPAD_UNIT
   systemctl --user status --no-pager -l $CEC_BUTTONS_UNIT
-  systemctl --user status --no-pager -l $CEC_WATCHDOG_TIMER
+  systemctl --user status --no-pager -l $CEC_RECOVER_PATH
   journalctl --user -u $CEC_BUTTONS_UNIT -f
-  journalctl --user -u $CEC_WATCHDOG_SERVICE -f
+  journalctl --user -u $CEC_RECOVER_SERVICE -f
 
 To change button bindings, edit:
   $ENV_FILE
