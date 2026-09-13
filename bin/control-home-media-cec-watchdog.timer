@@ -1,0 +1,14 @@
+# Version: 1
+
+[Unit]
+Description=Run Control Home Media CEC health watchdog
+Documentation=https://github.com/
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=1min
+AccuracySec=10s
+Persistent=true
+
+[Install]
+WantedBy=timers.target

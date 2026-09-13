@@ -1,5 +1,5 @@
 #!/bin/bash
-# Version: 9
+# Version: 10
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -20,7 +20,8 @@ find_control_home_media_repo() {
         "$REPO_DIR"
     do
         if [ -f "$candidate/scripts/steam-gamepad-shortcut.py" ] &&
-            [ -f "$candidate/scripts/cec-input-color-buttons.py" ]; then
+            [ -f "$candidate/scripts/cec-input-color-buttons.py" ] &&
+            [ -f "$candidate/scripts/cec-watchdog.py" ]; then
             printf '%s\n' "$candidate"
             return 0
         fi
@@ -38,12 +39,15 @@ write_default_env() {
     fi
 
     cat <<EOF
-# Version: 6
+# Version: 7
 CONTROL_HOME_MEDIA_REPO=$APP_DIR
 MEDIA_CEC_STATUS_COMMAND=$cec_status_command
 MEDIA_CEC_SAFE_INIT_COMMAND=$cec_status_command
 MEDIA_CEC_CHECK_INTERVAL_SECONDS=5
 MEDIA_CEC_INPUT_GRAB=1
+MEDIA_CEC_WATCHDOG_ENABLED=1
+MEDIA_CEC_WATCHDOG_FD_THRESHOLD=900
+MEDIA_CEC_WATCHDOG_INPUT_MISSING_GRACE_SECONDS=120
 # MEDIA_CEC_REFRESH_COMMAND=
 MEDIA_CEC_KEY_RED_COMMAND=$BIN_DIR/steam-gamepad-shortcut.py home
 MEDIA_CEC_KEY_GREEN_COMMAND=$BIN_DIR/steam-gamepad-shortcut.py home+a
@@ -100,6 +104,8 @@ SOURCE_REPO="$(find_control_home_media_repo || true)"
 
 STEAM_GAMEPAD_UNIT="control-home-media-steam-gamepad.service"
 CEC_BUTTONS_UNIT="control-home-media-cec-buttons.service"
+CEC_WATCHDOG_SERVICE="control-home-media-cec-watchdog.service"
+CEC_WATCHDOG_TIMER="control-home-media-cec-watchdog.timer"
 
 echo "Installing Control Home Media CEC services from $REPO_DIR"
 
@@ -122,20 +128,25 @@ rm -rf "$APP_DIR/harman-kardon-remote"
 mkdir -p "$APP_DIR/scripts"
 install -m 0755 "$SOURCE_REPO/scripts/steam-gamepad-shortcut.py" "$APP_DIR/scripts/steam-gamepad-shortcut.py"
 install -m 0755 "$SOURCE_REPO/scripts/cec-input-color-buttons.py" "$APP_DIR/scripts/cec-input-color-buttons.py"
+install -m 0755 "$SOURCE_REPO/scripts/cec-watchdog.py" "$APP_DIR/scripts/cec-watchdog.py"
 rm -f "$APP_DIR/scripts/cec-input-receiver-volume.py" "$APP_DIR/scripts/steamos-wakeup-media-cec.sh"
 
 install -m 0755 "$APP_DIR/scripts/steam-gamepad-shortcut.py" "$BIN_DIR/steam-gamepad-shortcut.py"
 install -m 0755 "$APP_DIR/scripts/cec-input-color-buttons.py" "$BIN_DIR/cec-input-color-buttons.py"
+install -m 0755 "$APP_DIR/scripts/cec-watchdog.py" "$BIN_DIR/cec-watchdog.py"
 rm -f "$BIN_DIR/cec-input-receiver-volume.py" "$BIN_DIR/steamos-wakeup-media-cec.sh"
 
 install -m 0644 "$SCRIPT_DIR/$STEAM_GAMEPAD_UNIT" "$USER_UNIT_DIR/$STEAM_GAMEPAD_UNIT"
 install -m 0644 "$SCRIPT_DIR/$CEC_BUTTONS_UNIT" "$USER_UNIT_DIR/$CEC_BUTTONS_UNIT"
+install -m 0644 "$SCRIPT_DIR/$CEC_WATCHDOG_SERVICE" "$USER_UNIT_DIR/$CEC_WATCHDOG_SERVICE"
+install -m 0644 "$SCRIPT_DIR/$CEC_WATCHDOG_TIMER" "$USER_UNIT_DIR/$CEC_WATCHDOG_TIMER"
 
 install_env_file
 
 systemctl --user daemon-reload
 systemctl --user enable --now "$STEAM_GAMEPAD_UNIT"
 systemctl --user enable --now "$CEC_BUTTONS_UNIT"
+systemctl --user enable --now "$CEC_WATCHDOG_TIMER"
 
 cat <<EOF
 COMPLETE
@@ -143,7 +154,9 @@ COMPLETE
 Useful commands:
   systemctl --user status --no-pager -l $STEAM_GAMEPAD_UNIT
   systemctl --user status --no-pager -l $CEC_BUTTONS_UNIT
+  systemctl --user status --no-pager -l $CEC_WATCHDOG_TIMER
   journalctl --user -u $CEC_BUTTONS_UNIT -f
+  journalctl --user -u $CEC_WATCHDOG_SERVICE -f
 
 To change button bindings, edit:
   $ENV_FILE
