@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Version: 3
+# Version: 4
 import argparse
 import os
 import re
@@ -10,7 +10,7 @@ import time
 from pathlib import Path
 
 
-DEFAULT_INPUT_PATTERN = r"^cecd\b"
+DEFAULT_INPUT_PATTERN = r"^(DP-4|cecd)"
 DEFAULT_CECD_UNIT = "cecd.service"
 DEFAULT_LISTENER_UNIT = "control-home-media-cec-buttons.service"
 UNAVAILABLE_PHYSICAL_ADDRESSES = {"f.f.f.f", "ffff", "65535"}
@@ -197,11 +197,19 @@ def check_once(args: argparse.Namespace) -> int:
         return restart_units(args.cecd_unit, args.listener_unit, args.reason, args.dry_run)
 
     state_file = Path(args.state_file)
-    cecd_active = service_active(args.cecd_unit)
     listener_active = service_active(args.listener_unit)
 
+    input_device = find_input_device(args.input_name_pattern)
+    if input_device:
+        clear_missing_since(state_file)
+        if not listener_active:
+            return restart_units(args.cecd_unit, args.listener_unit, f"{args.listener_unit} is not active", args.dry_run)
+        log(f"CEC watchdog ok: input={input_device}, listener_active={listener_active}")
+        return 0
+
+    cecd_active = service_active(args.cecd_unit)
     if not cecd_active:
-        return restart_units(args.cecd_unit, args.listener_unit, f"{args.cecd_unit} is not active", args.dry_run)
+        return restart_units(args.cecd_unit, args.listener_unit, f"input missing and {args.cecd_unit} is not active", args.dry_run)
 
     cecd_pid = service_main_pid(args.cecd_unit)
     current_fd_count = fd_count(cecd_pid) if cecd_pid else None
@@ -212,17 +220,6 @@ def check_once(args: argparse.Namespace) -> int:
             f"{args.cecd_unit} fd count is {current_fd_count}, threshold is {args.fd_threshold}",
             args.dry_run,
         )
-
-    input_device = find_input_device(args.input_name_pattern)
-    if input_device:
-        clear_missing_since(state_file)
-        if not listener_active:
-            return restart_units(args.cecd_unit, args.listener_unit, f"{args.listener_unit} is not active", args.dry_run)
-        log(
-            "CEC watchdog ok: "
-            f"input={input_device}, cecd_fd_count={current_fd_count}, listener_active={listener_active}"
-        )
-        return 0
 
     if args.device_event:
         ready, reason = cec_ready(args.cec_status_command)

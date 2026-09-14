@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Version: 4
+# Version: 5
 import argparse
 import errno
 import fcntl
@@ -543,11 +543,11 @@ def main(argv: list[str]) -> int:
     parser.add_argument(
         "--event-device",
         default=os.environ.get("MEDIA_CEC_INPUT_DEVICE"),
-        help="Input event device, for example /dev/input/event21. Defaults to auto-detecting 'cecd'.",
+        help="Input event device, for example /dev/input/event21. Defaults to auto-detecting CEC input devices.",
     )
     parser.add_argument(
         "--device-name-pattern",
-        default=os.environ.get("MEDIA_CEC_INPUT_NAME_PATTERN", r"^cecd\b"),
+        default=os.environ.get("MEDIA_CEC_INPUT_NAME_PATTERN", r"^(DP-4|cecd)"),
         help="Regex used for auto-detecting the CEC input device from /proc/bus/input/devices.",
     )
     parser.add_argument(
