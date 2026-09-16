@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Version: 1
+# Version: 2
 import argparse
 import fcntl
 import os
@@ -31,6 +31,8 @@ BTN_NORTH = 0x133  # Top face button
 BTN_WEST = 0x134  # Left face button
 BTN_TL = 0x136
 BTN_TR = 0x137
+BTN_TL2 = 0x138
+BTN_TR2 = 0x139
 BTN_SELECT = 0x13A
 BTN_START = 0x13B
 BTN_MODE = 0x13C  # Guide/Home
@@ -85,6 +87,8 @@ BASE_BUTTON_CODES = {
     "start": BTN_START,
     "lb": BTN_TL,
     "rb": BTN_TR,
+    "lt": BTN_TL2,
+    "rt": BTN_TR2,
     "l3": BTN_THUMBL,
     "r3": BTN_THUMBR,
 }
@@ -96,6 +100,8 @@ SUPPORTED_KEYS = (
     BTN_WEST,
     BTN_TL,
     BTN_TR,
+    BTN_TL2,
+    BTN_TR2,
     BTN_SELECT,
     BTN_START,
     BTN_MODE,

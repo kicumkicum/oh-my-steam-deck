@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Version: 5
+# Version: 6
 import argparse
 import errno
 import fcntl
@@ -25,12 +25,22 @@ KEY_YELLOW = 400
 KEY_BLUE = 401
 KEY_1 = 2
 KEY_2 = 3
+KEY_3 = 4
 KEY_4 = 5
 KEY_5 = 6
+KEY_6 = 7
+KEY_7 = 8
+KEY_8 = 9
+KEY_9 = 10
 KEY_NUMERIC_1 = 513
 KEY_NUMERIC_2 = 514
+KEY_NUMERIC_3 = 515
 KEY_NUMERIC_4 = 516
 KEY_NUMERIC_5 = 517
+KEY_NUMERIC_6 = 518
+KEY_NUMERIC_7 = 519
+KEY_NUMERIC_8 = 520
+KEY_NUMERIC_9 = 521
 
 KEY_NAMES = {
     KEY_RED: "KEY_RED",
@@ -39,12 +49,22 @@ KEY_NAMES = {
     KEY_BLUE: "KEY_BLUE",
     KEY_1: "KEY_1",
     KEY_2: "KEY_2",
+    KEY_3: "KEY_3",
     KEY_4: "KEY_4",
     KEY_5: "KEY_5",
+    KEY_6: "KEY_6",
+    KEY_7: "KEY_7",
+    KEY_8: "KEY_8",
+    KEY_9: "KEY_9",
     KEY_NUMERIC_1: "KEY_NUMERIC_1",
     KEY_NUMERIC_2: "KEY_NUMERIC_2",
+    KEY_NUMERIC_3: "KEY_NUMERIC_3",
     KEY_NUMERIC_4: "KEY_NUMERIC_4",
     KEY_NUMERIC_5: "KEY_NUMERIC_5",
+    KEY_NUMERIC_6: "KEY_NUMERIC_6",
+    KEY_NUMERIC_7: "KEY_NUMERIC_7",
+    KEY_NUMERIC_8: "KEY_NUMERIC_8",
+    KEY_NUMERIC_9: "KEY_NUMERIC_9",
 }
 
 REMOTE_KEY_COMMAND_ENV = {
@@ -54,12 +74,22 @@ REMOTE_KEY_COMMAND_ENV = {
     KEY_BLUE: "MEDIA_CEC_KEY_BLUE_COMMAND",
     KEY_1: "MEDIA_CEC_KEY_1_COMMAND",
     KEY_2: "MEDIA_CEC_KEY_2_COMMAND",
+    KEY_3: "MEDIA_CEC_KEY_3_COMMAND",
     KEY_4: "MEDIA_CEC_KEY_4_COMMAND",
     KEY_5: "MEDIA_CEC_KEY_5_COMMAND",
+    KEY_6: "MEDIA_CEC_KEY_6_COMMAND",
+    KEY_7: "MEDIA_CEC_KEY_7_COMMAND",
+    KEY_8: "MEDIA_CEC_KEY_8_COMMAND",
+    KEY_9: "MEDIA_CEC_KEY_9_COMMAND",
     KEY_NUMERIC_1: "MEDIA_CEC_KEY_1_COMMAND",
     KEY_NUMERIC_2: "MEDIA_CEC_KEY_2_COMMAND",
+    KEY_NUMERIC_3: "MEDIA_CEC_KEY_3_COMMAND",
     KEY_NUMERIC_4: "MEDIA_CEC_KEY_4_COMMAND",
     KEY_NUMERIC_5: "MEDIA_CEC_KEY_5_COMMAND",
+    KEY_NUMERIC_6: "MEDIA_CEC_KEY_6_COMMAND",
+    KEY_NUMERIC_7: "MEDIA_CEC_KEY_7_COMMAND",
+    KEY_NUMERIC_8: "MEDIA_CEC_KEY_8_COMMAND",
+    KEY_NUMERIC_9: "MEDIA_CEC_KEY_9_COMMAND",
 }
 
 UNSAFE_CEC_COMMAND_TOKENS = {
@@ -473,12 +503,22 @@ def read_events(
             KEY_BLUE,
             KEY_1,
             KEY_2,
+            KEY_3,
             KEY_4,
             KEY_5,
+            KEY_6,
+            KEY_7,
+            KEY_8,
+            KEY_9,
             KEY_NUMERIC_1,
             KEY_NUMERIC_2,
+            KEY_NUMERIC_3,
             KEY_NUMERIC_4,
             KEY_NUMERIC_5,
+            KEY_NUMERIC_6,
+            KEY_NUMERIC_7,
+            KEY_NUMERIC_8,
+            KEY_NUMERIC_9,
         )
         if key_commands.get(code)
     ]
@@ -568,8 +608,13 @@ def main(argv: list[str]) -> int:
     parser.add_argument("--blue-command", default=os.environ.get("MEDIA_CEC_KEY_BLUE_COMMAND"))
     parser.add_argument("--key-1-command", default=os.environ.get("MEDIA_CEC_KEY_1_COMMAND"))
     parser.add_argument("--key-2-command", default=os.environ.get("MEDIA_CEC_KEY_2_COMMAND"))
+    parser.add_argument("--key-3-command", default=os.environ.get("MEDIA_CEC_KEY_3_COMMAND"))
     parser.add_argument("--key-4-command", default=os.environ.get("MEDIA_CEC_KEY_4_COMMAND"))
     parser.add_argument("--key-5-command", default=os.environ.get("MEDIA_CEC_KEY_5_COMMAND"))
+    parser.add_argument("--key-6-command", default=os.environ.get("MEDIA_CEC_KEY_6_COMMAND"))
+    parser.add_argument("--key-7-command", default=os.environ.get("MEDIA_CEC_KEY_7_COMMAND"))
+    parser.add_argument("--key-8-command", default=os.environ.get("MEDIA_CEC_KEY_8_COMMAND"))
+    parser.add_argument("--key-9-command", default=os.environ.get("MEDIA_CEC_KEY_9_COMMAND"))
     parser.add_argument("--dry-run", action="store_true", help="Print commands without running them.")
     parser.add_argument(
         "--cec-refresh-command",
@@ -602,12 +647,22 @@ def main(argv: list[str]) -> int:
         KEY_BLUE: args.blue_command,
         KEY_1: args.key_1_command,
         KEY_2: args.key_2_command,
+        KEY_3: args.key_3_command,
         KEY_4: args.key_4_command,
         KEY_5: args.key_5_command,
+        KEY_6: args.key_6_command,
+        KEY_7: args.key_7_command,
+        KEY_8: args.key_8_command,
+        KEY_9: args.key_9_command,
         KEY_NUMERIC_1: args.key_1_command,
         KEY_NUMERIC_2: args.key_2_command,
+        KEY_NUMERIC_3: args.key_3_command,
         KEY_NUMERIC_4: args.key_4_command,
         KEY_NUMERIC_5: args.key_5_command,
+        KEY_NUMERIC_6: args.key_6_command,
+        KEY_NUMERIC_7: args.key_7_command,
+        KEY_NUMERIC_8: args.key_8_command,
+        KEY_NUMERIC_9: args.key_9_command,
     }
 
     if args.test_key_code is not None:
