@@ -1,4 +1,4 @@
-# Version: 1
+# Version: 2
 
 [Unit]
 Description=Control Home Media Steam virtual gamepad shortcut daemon
@@ -7,7 +7,7 @@ Documentation=https://github.com/
 [Service]
 Type=simple
 Environment=STEAM_GAMEPAD_SHORTCUT_PROFILE=8bitdo-ultimate-2c
-ExecStart=/usr/bin/env python3 %h/bin/steam-gamepad-shortcut.py --daemon --settle 3
+ExecStart=/usr/bin/env python3 %h/bin/steam-gamepad-shortcut.py --daemon --settle 3 --name "IR Remote Gamepad"
 Restart=always
 RestartSec=3
 

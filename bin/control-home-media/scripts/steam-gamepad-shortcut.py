@@ -44,7 +44,7 @@ DEFAULT_VERSION = 0x0001
 
 PROFILES = {
     "xbox360": {
-        "name": "Microsoft X-Box 360 pad",
+        "name": "IR Remote Gamepad",
         "vendor": 0x045E,
         "product": 0x028E,
         "version": 0x0001,
