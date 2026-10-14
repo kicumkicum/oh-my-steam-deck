@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Version: 6
+# Version: 7
 import argparse
 import errno
 import fcntl
@@ -19,6 +19,11 @@ EV_SYN = 0x00
 EV_KEY = 0x01
 SYN_REPORT = 0
 KEY_MAX = 0x2FF
+KEY_ESC = 1
+KEY_ENTER = 28
+KEY_BACK = 158
+KEY_EXIT = 174
+KEY_OK = 352
 KEY_RED = 398
 KEY_GREEN = 399
 KEY_YELLOW = 400
@@ -43,6 +48,11 @@ KEY_NUMERIC_8 = 520
 KEY_NUMERIC_9 = 521
 
 KEY_NAMES = {
+    KEY_ESC: "KEY_ESC",
+    KEY_ENTER: "KEY_ENTER",
+    KEY_BACK: "KEY_BACK",
+    KEY_EXIT: "KEY_EXIT",
+    KEY_OK: "KEY_OK",
     KEY_RED: "KEY_RED",
     KEY_GREEN: "KEY_GREEN",
     KEY_YELLOW: "KEY_YELLOW",
@@ -483,10 +493,30 @@ def handle_key_code(code: int, key_commands: dict[int, str], dry_run: bool) -> N
         run_shell_command(command, dry_run)
 
 
+def route_input_event(
+    event_type: int,
+    code: int,
+    value: int,
+    key_commands: dict[int, str],
+    key_remaps: dict[int, int],
+    virtual_keyboard: VirtualKeyboard | None,
+) -> str | None:
+    """Forward a grabbed input event and return any command it should trigger."""
+    remapped_code = key_remaps.get(code) if event_type == EV_KEY and virtual_keyboard else None
+    command = None if remapped_code is not None else key_commands.get(code)
+
+    if virtual_keyboard and event_type in (EV_KEY, EV_SYN):
+        if command is None:
+            virtual_keyboard.forward(event_type, remapped_code if remapped_code is not None else code, value)
+
+    return command
+
+
 def read_events(
     event_device: str,
     include_repeats: bool,
     key_commands: dict[int, str],
+    key_remaps: dict[int, int],
     grab_input: bool,
     dry_run: bool,
 ) -> None:
@@ -526,6 +556,12 @@ def read_events(
         log("Mapped remote keys: " + ", ".join(mapped_keys))
     else:
         log("No remote key commands configured.")
+    if key_remaps:
+        remaps = ", ".join(
+            f"{KEY_NAMES.get(source, source)}->{KEY_NAMES.get(target, target)}"
+            for source, target in key_remaps.items()
+        )
+        log("Remote keyboard remaps: " + remaps)
 
     try:
         event_file = open(event_device, "rb", buffering=0)
@@ -555,11 +591,14 @@ def read_events(
                     raise RecoverableCecInputError(f"short read from {event_device}")
 
                 _sec, _usec, event_type, code, value = struct.unpack(event_format, data)
-                command = key_commands.get(code)
-                suppress_event = event_type == EV_KEY and bool(command)
-
-                if not suppress_event and virtual_keyboard and event_type in (EV_KEY, EV_SYN):
-                    virtual_keyboard.forward(event_type, code, value)
+                command = route_input_event(
+                    event_type,
+                    code,
+                    value,
+                    key_commands,
+                    key_remaps,
+                    virtual_keyboard,
+                )
 
                 if event_type != EV_KEY:
                     continue
@@ -601,6 +640,18 @@ def main(argv: list[str]) -> int:
         action=argparse.BooleanOptionalAction,
         default=parse_bool(os.environ.get("MEDIA_CEC_INPUT_GRAB"), True),
         help="Grab the CEC input device, suppress mapped keys, and forward unmapped keys through uinput.",
+    )
+    parser.add_argument(
+        "--ok-key-code",
+        type=int,
+        default=int(os.environ.get("MEDIA_CEC_KEY_OK_CODE", str(KEY_ENTER))),
+        help="Keyboard code emitted for CEC OK/Enter while grabbing input; 0 disables the remap.",
+    )
+    parser.add_argument(
+        "--back-key-code",
+        type=int,
+        default=int(os.environ.get("MEDIA_CEC_KEY_BACK_CODE", str(KEY_ESC))),
+        help="Keyboard code emitted for CEC Back/Exit while grabbing input; 0 disables the remap.",
     )
     parser.add_argument("--red-command", default=os.environ.get("MEDIA_CEC_KEY_RED_COMMAND"))
     parser.add_argument("--green-command", default=os.environ.get("MEDIA_CEC_KEY_GREEN_COMMAND"))
@@ -664,6 +715,16 @@ def main(argv: list[str]) -> int:
         KEY_NUMERIC_8: args.key_8_command,
         KEY_NUMERIC_9: args.key_9_command,
     }
+    key_remaps = {
+        source: target
+        for source, target in (
+            (KEY_ENTER, args.ok_key_code),
+            (KEY_OK, args.ok_key_code),
+            (KEY_BACK, args.back_key_code),
+            (KEY_EXIT, args.back_key_code),
+        )
+        if target > 0
+    }
 
     if args.test_key_code is not None:
         handle_key_code(args.test_key_code, key_commands, args.dry_run)
@@ -683,6 +744,7 @@ def main(argv: list[str]) -> int:
                 event_device=event_device,
                 include_repeats=args.include_repeats,
                 key_commands=key_commands,
+                key_remaps=key_remaps,
                 grab_input=args.grab_input,
                 dry_run=args.dry_run,
             )
