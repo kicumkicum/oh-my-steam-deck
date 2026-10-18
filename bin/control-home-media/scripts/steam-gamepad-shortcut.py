@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Version: 2
+# Version: 4
 import argparse
 import fcntl
 import os
@@ -46,7 +46,7 @@ DEFAULT_VERSION = 0x0001
 
 PROFILES = {
     "xbox360": {
-        "name": "IR Remote Gamepad",
+        "name": "Xbox 360 Controller",
         "vendor": 0x045E,
         "product": 0x028E,
         "version": 0x0001,
@@ -87,10 +87,13 @@ BASE_BUTTON_CODES = {
     "start": BTN_START,
     "lb": BTN_TL,
     "rb": BTN_TR,
-    "lt": BTN_TL2,
-    "rt": BTN_TR2,
     "l3": BTN_THUMBL,
     "r3": BTN_THUMBR,
+}
+
+BASE_AXIS_CODES = {
+    "lt": ABS_Z,
+    "rt": ABS_RZ,
 }
 
 SUPPORTED_KEYS = (
@@ -100,8 +103,6 @@ SUPPORTED_KEYS = (
     BTN_WEST,
     BTN_TL,
     BTN_TR,
-    BTN_TL2,
-    BTN_TR2,
     BTN_SELECT,
     BTN_START,
     BTN_MODE,
@@ -201,48 +202,55 @@ def button_codes_for_profile(profile: str) -> dict[str, int]:
     return codes
 
 
-def parse_shortcut(shortcut: str, *, profile: str) -> list[int]:
+def parse_shortcut(shortcut: str, *, profile: str) -> list[tuple[int, int, int, int]]:
     button_codes = button_codes_for_profile(profile)
+    supported_names = button_codes.keys() | BASE_AXIS_CODES.keys()
     names = [part.strip().lower() for part in shortcut.split("+") if part.strip()]
     if not names:
         raise ValueError("shortcut is empty")
 
-    unknown = [name for name in names if name not in button_codes]
+    unknown = [name for name in names if name not in supported_names]
     if unknown:
         raise ValueError(
             "unsupported button(s): "
             + ", ".join(unknown)
             + ". Supported: "
-            + ", ".join(sorted(button_codes))
+            + ", ".join(sorted(supported_names))
         )
 
-    return [button_codes[name] for name in names]
+    actions = []
+    for name in names:
+        if name in BASE_AXIS_CODES:
+            actions.append((EV_ABS, BASE_AXIS_CODES[name], 255, 0))
+        else:
+            actions.append((EV_KEY, button_codes[name], 1, 0))
+    return actions
 
 
 def emit_shortcut(
     fd: int,
     shortcut: str,
-    button_codes: list[int],
+    actions: list[tuple[int, int, int, int]],
     *,
     hold_seconds: float,
     chord_delay_seconds: float,
     verbose: bool,
 ) -> None:
-    log(f"Pressing {shortcut}: {button_codes}", verbose=verbose)
-    if len(button_codes) > 1 and button_codes[0] == BTN_MODE:
+    log(f"Pressing {shortcut}: {actions}", verbose=verbose)
+    if len(actions) > 1 and actions[0][:2] == (EV_KEY, BTN_MODE):
         emit(fd, EV_KEY, BTN_MODE, 1)
         sync(fd)
         log(f"Holding Home before chord for {chord_delay_seconds:.3f}s", verbose=verbose)
         time.sleep(chord_delay_seconds)
 
-        for code in button_codes[1:]:
-            emit(fd, EV_KEY, code, 1)
+        for event_type, code, pressed_value, _released_value in actions[1:]:
+            emit(fd, event_type, code, pressed_value)
         sync(fd)
 
         time.sleep(hold_seconds)
 
-        for code in reversed(button_codes[1:]):
-            emit(fd, EV_KEY, code, 0)
+        for event_type, code, _pressed_value, released_value in reversed(actions[1:]):
+            emit(fd, event_type, code, released_value)
         sync(fd)
 
         log(f"Holding Home after chord for {chord_delay_seconds:.3f}s", verbose=verbose)
@@ -251,14 +259,14 @@ def emit_shortcut(
         sync(fd)
         return
 
-    for code in button_codes:
-        emit(fd, EV_KEY, code, 1)
+    for event_type, code, pressed_value, _released_value in actions:
+        emit(fd, event_type, code, pressed_value)
     sync(fd)
 
     time.sleep(hold_seconds)
 
-    for code in reversed(button_codes):
-        emit(fd, EV_KEY, code, 0)
+    for event_type, code, _pressed_value, released_value in reversed(actions):
+        emit(fd, event_type, code, released_value)
     sync(fd)
 
 
@@ -278,7 +286,7 @@ def press_shortcut(
     verbose: bool,
     dry_run: bool,
 ) -> None:
-    button_codes = parse_shortcut(shortcut, profile=profile)
+    actions = parse_shortcut(shortcut, profile=profile)
 
     if dry_run:
         print(
@@ -301,7 +309,7 @@ def press_shortcut(
         emit_shortcut(
             fd,
             shortcut,
-            button_codes,
+            actions,
             hold_seconds=hold_seconds,
             chord_delay_seconds=chord_delay_seconds,
             verbose=verbose,
@@ -378,11 +386,11 @@ def run_daemon(
             with conn:
                 request = conn.recv(4096).decode("utf-8", errors="replace").strip()
                 try:
-                    button_codes = parse_shortcut(request, profile=profile)
+                    actions = parse_shortcut(request, profile=profile)
                     emit_shortcut(
                         fd,
                         request,
-                        button_codes,
+                        actions,
                         hold_seconds=hold_seconds,
                         chord_delay_seconds=chord_delay_seconds,
                         verbose=verbose,
@@ -415,8 +423,8 @@ def main(argv: list[str]) -> int:
     parser.add_argument(
         "--profile",
         choices=sorted(PROFILES),
-        default=os.environ.get("STEAM_GAMEPAD_SHORTCUT_PROFILE", "8bitdo-ultimate-2c"),
-        help="Virtual gamepad profile. Default: 8bitdo-ultimate-2c.",
+        default=os.environ.get("STEAM_GAMEPAD_SHORTCUT_PROFILE", "xbox360"),
+        help="Virtual gamepad profile. Default: xbox360.",
     )
     parser.add_argument(
         "--uinput",

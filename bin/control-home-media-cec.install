@@ -1,5 +1,5 @@
 #!/bin/bash
-# Version: 15
+# Version: 16
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -20,6 +20,7 @@ find_control_home_media_repo() {
         "$REPO_DIR"
     do
         if [ -f "$candidate/scripts/steam-gamepad-shortcut.py" ] &&
+            [ -f "$candidate/scripts/steam-side-menu.py" ] &&
             [ -f "$candidate/scripts/cec-input-color-buttons.py" ] &&
             [ -f "$candidate/scripts/cec-watchdog.py" ]; then
             printf '%s\n' "$candidate"
@@ -39,7 +40,7 @@ write_default_env() {
     fi
 
     cat <<EOF
-# Version: 10
+# Version: 11
 CONTROL_HOME_MEDIA_REPO=$APP_DIR
 MEDIA_CEC_STATUS_COMMAND=$cec_status_command
 MEDIA_CEC_SAFE_INIT_COMMAND=$cec_status_command
@@ -52,10 +53,10 @@ MEDIA_CEC_WATCHDOG_ENABLED=1
 MEDIA_CEC_WATCHDOG_FD_THRESHOLD=900
 MEDIA_CEC_WATCHDOG_INPUT_MISSING_GRACE_SECONDS=120
 # MEDIA_CEC_REFRESH_COMMAND=
-MEDIA_CEC_KEY_RED_COMMAND=$BIN_DIR/steam-gamepad-shortcut.py home
+MEDIA_CEC_KEY_RED_COMMAND=$BIN_DIR/steam-side-menu.py main
 MEDIA_CEC_KEY_GREEN_COMMAND=$BIN_DIR/steam-gamepad-shortcut.py home+x
 # MEDIA_CEC_KEY_YELLOW_COMMAND=
-MEDIA_CEC_KEY_BLUE_COMMAND=$BIN_DIR/steam-gamepad-shortcut.py home+a
+MEDIA_CEC_KEY_BLUE_COMMAND=$BIN_DIR/steam-side-menu.py quick
 MEDIA_CEC_KEY_1_COMMAND=$BIN_DIR/steam-gamepad-shortcut.py lb
 MEDIA_CEC_KEY_2_COMMAND=$BIN_DIR/steam-gamepad-shortcut.py y
 MEDIA_CEC_KEY_3_COMMAND=$BIN_DIR/steam-gamepad-shortcut.py rb
@@ -137,16 +138,22 @@ rm -f "$APP_DIR/control_media.py" "$APP_DIR/control_media.config.example.json"
 rm -rf "$APP_DIR/harman-kardon-remote"
 mkdir -p "$APP_DIR/scripts"
 install -m 0755 "$SOURCE_REPO/scripts/steam-gamepad-shortcut.py" "$APP_DIR/scripts/steam-gamepad-shortcut.py"
+install -m 0755 "$SOURCE_REPO/scripts/steam-side-menu.py" "$APP_DIR/scripts/steam-side-menu.py"
 install -m 0755 "$SOURCE_REPO/scripts/cec-input-color-buttons.py" "$APP_DIR/scripts/cec-input-color-buttons.py"
 install -m 0755 "$SOURCE_REPO/scripts/cec-watchdog.py" "$APP_DIR/scripts/cec-watchdog.py"
 rm -f "$APP_DIR/scripts/cec-input-receiver-volume.py" "$APP_DIR/scripts/steamos-wakeup-media-cec.sh"
 
 install -m 0755 "$APP_DIR/scripts/steam-gamepad-shortcut.py" "$BIN_DIR/steam-gamepad-shortcut.py"
+install -m 0755 "$APP_DIR/scripts/steam-side-menu.py" "$BIN_DIR/steam-side-menu.py"
 install -m 0755 "$APP_DIR/scripts/cec-input-color-buttons.py" "$BIN_DIR/cec-input-color-buttons.py"
 install -m 0755 "$APP_DIR/scripts/cec-watchdog.py" "$BIN_DIR/cec-watchdog.py"
 rm -f "$BIN_DIR/cec-input-receiver-volume.py" "$BIN_DIR/steamos-wakeup-media-cec.sh"
 
 install -m 0644 "$SCRIPT_DIR/$STEAM_GAMEPAD_UNIT" "$USER_UNIT_DIR/$STEAM_GAMEPAD_UNIT"
+sudo install -m 0644 \
+    "$SCRIPT_DIR/72-control-home-media-steam-gamepad.rules" \
+    /etc/udev/rules.d/72-control-home-media-steam-gamepad.rules
+sudo udevadm control --reload-rules
 install -m 0644 "$SCRIPT_DIR/$CEC_BUTTONS_UNIT" "$USER_UNIT_DIR/$CEC_BUTTONS_UNIT"
 install -m 0644 "$SCRIPT_DIR/$CEC_WATCHDOG_SERVICE" "$USER_UNIT_DIR/$CEC_WATCHDOG_SERVICE"
 install -m 0644 "$SCRIPT_DIR/$CEC_RECOVER_SERVICE" "$USER_UNIT_DIR/$CEC_RECOVER_SERVICE"

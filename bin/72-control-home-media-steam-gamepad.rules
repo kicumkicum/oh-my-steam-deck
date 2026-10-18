@@ -1,0 +1,4 @@
+# Steam reads the virtual shortcut controller through its event node. Hide the
+# legacy joystick node so applications such as Kodi do not handle Guide/Home
+# before Steam turns it into a system menu action.
+ACTION=="add|change", SUBSYSTEM=="input", KERNEL=="js*", ATTRS{name}=="Xbox 360 Controller", ENV{ID_INPUT}="", ENV{ID_INPUT_JOYSTICK}="", TAG-="uaccess", MODE="0600"
